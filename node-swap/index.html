@@ -92,7 +92,7 @@ input, select, textarea { font: inherit; color: inherit }
 .panel .pclose { position: absolute; top: 2px; right: 6px; font-size: 20px; color: var(--muted); padding: 4px 8px }
 .maplegend { display: flex; gap: 10px; align-items: center; padding: 10px 14px; font-size: 12px; line-height: 1.35; color: #6b5600 }
 .maplegend.new { background: #fff8d6 }
-.question { padding: 10px 14px 12px; font-size: 12px; line-height: 1.4; background: #fdecea; color: #7a1f1a }
+.question { padding: 10px 16px 12px; font-size: 12px; line-height: 1.4; background: #fdecea; color: #7a1f1a }
 .question b { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px }
 .question p { margin: 0 }
 .mk-bubble { width: 34px; height: 40px; flex: 0 0 auto }
@@ -221,7 +221,11 @@ input, select, textarea { font: inherit; color: inherit }
     <div class="r new" id="cDipBtnRow" style="min-height:48px"><span class="l dark">DIP:</span>
       <div class="dipbtn"><button class="raised" id="cDipBtn">DIP SWITCH</button><span class="dipok" id="cDipText" hidden>&#10003; all down</span></div></div>
     <div class="r" id="cGenRow" hidden><span class="l">Gen:</span><div class="sp"><select><option>GEN 2</option><option>GEN 3</option></select><span class="chev"></span></div></div>
-    <div class="r"><span class="l">Reason:</span><div class="sp"><select id="cReason"><option value="">&lt;Select Reason&gt;</option></select><span class="chev"></span></div></div>
+    <div class="r" hidden><span class="l">Reason:</span><div class="sp"><select id="cReason"><option value="">&lt;Select Reason&gt;</option></select><span class="chev"></span></div></div>
+    <div class="question" id="qReason">
+      <b>Open question</b>
+      <p>No Reason field here. This is a specialised screen, but underneath it is still a node swap, so we have to decide which swap reason gets recorded: a fixed value (e.g. "Refresh"), or copied from why the node was flagged?</p>
+    </div>
     <div class="r" id="cOrg" style="min-height:40px"><div class="warnline" style="grid-column:1/-1"><span class="tri"></span>Property contains organic formulations</div></div>
     <div class="r" id="cFormuRow"><span class="l">Formu:</span><div class="sp"><div class="formu"><span class="sw"></span><div><div>CM Eco</div><div class="chip">Active</div></div></div><span class="chev"></span></div></div>
     <div class="r" id="cLureRow" hidden><span class="l">Lure:</span><div class="lure">CM-DA + NOW L2 (2 selected)</div></div>
@@ -392,7 +396,6 @@ $('cReason').onchange = e => { if (e.target.value === 'Other') otherSheet(); };
 $('cOk').onclick = () => {
   const t = TYPES[state.type]; const errs = [];
   if (!$('cId').value && t.editable) errs.push('Mac/Node Id');
-  if (!$('cReason').value) errs.push('Reason');
   if (t.reuse && !document.querySelector('input[name=cReuse]:checked')) errs.push('Reuse Can');
   if (t.dip && !state.dipOk) errs.push('DIP switch confirmation');
   if (errs.length) { toast(`Swap Node Failed: ${errs.join(', ')} missing`); return; }
