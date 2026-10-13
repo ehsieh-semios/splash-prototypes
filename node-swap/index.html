@@ -125,7 +125,6 @@ input, select, textarea { font: inherit; color: inherit }
   <button data-step="4-1" aria-pressed="false">4-1 · Swapped, Removed? checked</button>
   <button data-step="4-2" aria-pressed="false">4-2 · Swapped, Removed? unchecked</button>
 </div>
-<div class="seg" role="group" aria-label="Node type being swapped" id="types" hidden></div>
 <p class="hint" id="hint">Map with the property's nodes. Nodes carrying the replace marker are flagged for swap. Tap one to open Node Swap.</p>
 <p class="legend"><span class="swatch"></span><b>Highlighted = this change.</b> Everything else is the screen as it is today.</p>
 
@@ -227,9 +226,7 @@ const REASONS = ['Offline', 'Low battery', 'Physical damage', 'Theft / cannot fi
 const $ = id => document.getElementById(id);
 const state = { type: 'NN SCD', other: '', nodeId: null, step: '1' };
 
-function renderTypes() {
-  $('types').innerHTML = Object.keys(TYPES).map(t => `<button data-t="${t}" aria-pressed="${t === state.type}">${t}</button>`).join('');
-}
+function renderTypes() {} // Node Swap in this prototype covers NN SCD only.
 function applyType() {
   const t = TYPES[state.type];
   $('cMac').textContent = state.nodeId && state.type === 'NN SCD' ? state.nodeId : t.old;
@@ -312,7 +309,7 @@ function showStep(step, node) {
   state.step = step;
   document.querySelectorAll('#steps button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.step === step)));
   const swap = step === '3';
-  $('map').hidden = swap; $('cur').hidden = !swap; $('types').hidden = !swap;
+  $('map').hidden = swap; $('cur').hidden = !swap;
   $('panel').hidden = step !== '2';
   $('hint').textContent = HINT[step];
   $('legReplace').hidden = step !== '1'; $('legDone').hidden = step !== '4-1'; $('legBin').hidden = step !== '4-2'; $('qBin').hidden = step !== '4-2';
@@ -342,7 +339,6 @@ $('mapSvg').addEventListener('click', e => {
 });
 $('mapSvg').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.target.closest('.node')?.dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
 
-$('types').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state.type = b.dataset.t; renderTypes(); applyType(); });
 $('cQr').onclick = () => { $('cId').value = TYPES[state.type].newId; toast(`Scanned ${TYPES[state.type].newId}`); };
 $('cCam').onclick = () => toast('Camera opens here.');
 $('cPrev').onchange = e => { $('cAlias').readOnly = e.target.checked; if (e.target.checked) $('cAlias').value = 'Node 549305'; };
