@@ -100,18 +100,10 @@ input, select, textarea { font: inherit; color: inherit }
 .back { position: absolute; left: 8px; top: 2px; font-size: 18px; color: var(--muted); padding: 0 6px }
 .legend { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin: -6px 0 0; max-width: 400px; text-align: left }
 .legend .swatch { width: 18px; height: 14px; background: #fff8d6; border: 1px solid var(--line); flex: 0 0 auto }
-.dipbtn { display: flex; align-items: center; gap: 12px }
-.raised { background: var(--cur-btn); border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,.25); padding: 0 16px; min-height: 36px; font-weight: 500; letter-spacing: .04em; color: #000 }
-.dipok { color: #2e7d32; font-weight: 700; font-size: 13px }
-/* DIP switch sheet */
-.dips { display: flex; gap: 14px; justify-content: center; padding: 12px; background: #2b2b2b; border-radius: 8px }
-.dip { width: 34px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; border: 0; background: none; padding: 0; color: #ddd; font-size: 11px }
-.dip .slot { width: 22px; height: 46px; background: #111; border-radius: 3px; position: relative; border: 1px solid #555 }
-.dip .knob { position: absolute; left: 3px; right: 3px; height: 18px; background: #e8e8e8; border-radius: 2px; top: 3px; transition: top .12s }
-.dip[data-down="true"] .knob { top: 23px }
-.dip[data-down="false"] .knob { background: #ff5252 }
-.sheet .dipmsg { font-size: 13px; color: var(--muted) }
-.sheet .dipmsg.bad { color: #e53935 }
+/* Can Insert date button, as on the NN SCD install screen */
+.datebtn { position: relative; display: grid; place-items: center; background: var(--cur-btn); border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,.25); min-height: 48px; font-size: 20px; font-weight: 500; color: #1d1f1b; cursor: pointer }
+.datebtn input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer }
+.sp select { color: #1d1f1b }
 .radios { display: flex; gap: 48px; font-size: 18px }
 .radios label { display: flex; align-items: center; gap: 10px }
 .radios input { width: 22px; height: 22px; margin: 0; accent-color: var(--muted) }
@@ -218,8 +210,10 @@ input, select, textarea { font: inherit; color: inherit }
       <div class="note">New row for NN SCD only. Default checked. Unchecked means the old node is still in the field.</div></div>
     <div class="r" id="cReuseRow"><span class="l dark">Reuse<br>Can?</span>
       <div class="radios"><label><input type="radio" name="cReuse" value="no">No</label><label><input type="radio" name="cReuse" value="yes">Yes</label></div></div>
-    <div class="r new" id="cDipBtnRow" style="min-height:48px"><span class="l dark">DIP:</span>
-      <div class="dipbtn"><button class="raised" id="cDipBtn">DIP SWITCH</button><span class="dipok" id="cDipText" hidden>&#10003; all down</span></div></div>
+    <div class="r new" id="cInsertRow" style="min-height:60px"><span class="l dark">Can<br>Insert:</span>
+      <label class="datebtn"><span id="cInsertText">2026-10-13</span><input type="date" id="cInsert" value="2026-10-13"></label></div>
+    <div class="r new" id="cDelayRow"><span class="l dark">Delay:</span>
+      <div class="sp"><select id="cDelay"><option value="0">No Delay</option><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select><span class="chev"></span></div></div>
     <div class="r" id="cGenRow" hidden><span class="l">Gen:</span><div class="sp"><select><option>GEN 2</option><option>GEN 3</option></select><span class="chev"></span></div></div>
     <div class="r" hidden><span class="l">Reason:</span><div class="sp"><select id="cReason"><option value="">&lt;Select Reason&gt;</option></select><span class="chev"></span></div></div>
     <div class="question" id="qReason">
@@ -249,7 +243,7 @@ const TYPES = {
 const REASONS = ['Offline', 'Low battery', 'Physical damage', 'Theft / cannot find', 'Service issue', 'Other'];
 
 const $ = id => document.getElementById(id);
-const state = { type: 'NN SCD', other: '', nodeId: null, step: '1', dipOk: false, dips: [] };
+const state = { type: 'NN SCD', other: '', nodeId: null, step: '1' };
 
 function renderTypes() {} // Node Swap in this prototype covers NN SCD only.
 function applyType() {
@@ -262,9 +256,8 @@ function applyType() {
   $('cVoucherRow').hidden = !t.voucher;
   $('cReuseRow').hidden = !t.reuse;
   $('cRemovedRow').hidden = state.type !== 'NN SCD'; $('cRemoved').checked = true;
-  $('cDipBtnRow').hidden = !t.dip;
-  state.dipOk = false; state.dips = [false, true, false, true]; // example: two switches still up
-  $('cDipText').hidden = true;
+  $('cInsertRow').hidden = !t.dip; $('cDelayRow').hidden = !t.dip;
+  $('cDelay').value = '0';
   $('cGenRow').hidden = !t.gen;
   $('cOrg').hidden = !t.organic;
   $('cFormuRow').hidden = !t.formu;
@@ -279,21 +272,6 @@ function otherSheet() {
   $('sheetHost').hidden = false; $('shTxt').focus();
 }
 function closeSheet() { $('sheetHost').hidden = true; $('sheetHost').innerHTML = ''; }
-// DIP switch sheet: four delay switches on the NN SCD; all must be down (no delay) before the swap.
-function dipSheet() {
-  const render = () => {
-    const allDown = state.dips.every(Boolean);
-    $('dipRow').innerHTML = state.dips.map((d, i) => `<button class="dip" data-i="${i}" data-down="${d}" aria-pressed="${d}" title="Switch ${i + 1}"><span class="slot"><span class="knob"></span></span>${i + 1}</button>`).join('');
-    $('dipMsg').textContent = allDown ? 'All delay switches down (no delay).' : `${state.dips.filter(x => !x).length} switch(es) still up. Tap to flip.`;
-    $('dipMsg').classList.toggle('bad', !allDown);
-    $('dipOk').disabled = !allDown;
-  };
-  $('sheetHost').innerHTML = `<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-labelledby="dipT"><h3 id="dipT">Delay DIP switches</h3><div class="dipmsg" id="dipMsg"></div><div class="dips" id="dipRow"></div><div class="acts"><button id="dipCancel">CANCEL</button><button id="dipOk">CONFIRM</button></div></div></div>`;
-  $('sheetHost').hidden = false; render();
-  $('dipRow').onclick = e => { const b = e.target.closest('.dip'); if (!b) return; state.dips[+b.dataset.i] = !state.dips[+b.dataset.i]; render(); };
-  $('dipCancel').onclick = closeSheet;
-  $('dipOk').onclick = () => { state.dipOk = true; $('cDipText').hidden = false; closeSheet(); toast('DIP switches confirmed.'); };
-}
 
 // ---- Map screen: markers drawn like the app (node_marker_shape_* paths, type colour, white stroke, state halo) ----
 const SHAPE = {
@@ -390,15 +368,13 @@ $('mapSvg').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key ==
 
 $('cQr').onclick = () => { $('cId').value = TYPES[state.type].newId; toast(`Scanned ${TYPES[state.type].newId}`); };
 $('cCam').onclick = () => toast('Camera opens here.');
-$('cDipBtn').onclick = dipSheet;
+$('cInsert').onchange = e => { if (e.target.value) $('cInsertText').textContent = e.target.value; };
 $('cPrev').onchange = e => { $('cAlias').readOnly = e.target.checked; if (e.target.checked) $('cAlias').value = 'Node 549305'; };
 $('cReason').onchange = e => { if (e.target.value === 'Other') otherSheet(); };
 $('cOk').onclick = () => {
   const t = TYPES[state.type]; const errs = [];
   if (!$('cId').value && t.editable) errs.push('Mac/Node Id');
-  if (t.reuse && !document.querySelector('input[name=cReuse]:checked')) errs.push('Reuse Can');
-  if (t.dip && !state.dipOk) errs.push('DIP switch confirmation');
-  if (errs.length) { toast(`Swap Node Failed: ${errs.join(', ')} missing`); return; }
+  if (t.reuse && !document.querySelector('input[name=cReuse]:checked')) errs.push('Reuse Can');  if (errs.length) { toast(`Swap Node Failed: ${errs.join(', ')} missing`); return; }
   if (state.type === 'NN SCD') {
     // This change: Removed? checked → step 4-1 (marker cleared); unchecked → step 4-2 (bin marker).
     const checked = $('cRemoved').checked;
