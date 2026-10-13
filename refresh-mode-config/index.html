@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0;font:14px system-ui}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<title>Refresh Mode Config</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+<style>
+/* Layout: one phone-width Android dialog centred on a canvas, A/B switch above it. */
+:root {
+  --bg: #e9ebe6; --surface: #ffffff; --fg: #1d1f1b; --muted: #6b6f68;
+  --line: #dcdfd9; --accent: #2e7d4f; --accent-fg: #ffffff; --row: #f4f5f2;
+  --done: #2e7d4f; --pending: #c2700d; --bar: #e1e4de; --scrim: rgba(0,0,0,.35);
+  --c-scd: #2e7d4f; --c-lnscd: #1d6fa5; --c-nnscd: #7a4fb3; --c-rpt: #8a6d1f;
+  --c-trp: #b3451f; --c-dntrp: #a1323f; --c-gtwy: #3b3f3a; --c-oob: #8a8d87;
+  --font: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+/* Light only, by request. */
+:root { color-scheme: light }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; padding: 0 16px; padding-block: 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; min-height: 100%; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.hint { color: var(--muted); font-size: 12px; max-width: 384px; text-align: center; text-wrap: balance }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; background: var(--surface) }
+.seg button { padding: 6px 14px; border-radius: 999px; font-size: 13px; color: var(--muted) }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg) }
+
+.dialog { width: 100%; max-width: 384px; background: var(--surface); border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.18); display: flex; flex-direction: column; overflow: hidden }
+.title { padding: 20px 20px 8px; font-size: 20px; font-weight: 500 }
+.eyebrow { font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--muted) }
+.mgmt { padding: 8px 20px 8px }
+.checks { display: flex; gap: 16px; flex-wrap: wrap; padding-top: 6px }
+.checks label { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer }
+.checks input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0 }
+hr { border: 0; border-top: 1px solid var(--line); margin: 0 }
+
+/* Type config, version A: accordion */
+.cards { display: flex; flex-direction: column }
+.card { border-bottom: 1px solid var(--line) }
+.card-h { width: 100%; display: flex; align-items: center; gap: 10px; padding: 0 20px; min-height: 56px; text-align: left }
+.card-h .name { font-weight: 500; flex: 1 }
+.card-h .sum { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums }
+.card-h .chev { width: 10px; height: 10px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .15s; margin-left: 4px }
+.card[open] .card-h .chev { transform: rotate(-135deg) }
+.card-b { padding: 0 20px 12px 58px; display: none; flex-direction: column; gap: 4px }
+.card[open] .card-b { display: flex }
+.setting { display: flex; align-items: center; justify-content: space-between; min-height: 40px; gap: 12px }
+.setting .lbl { color: var(--muted) }
+.setting select { font: inherit; color: var(--fg); background: var(--row); border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px }
+.setting .static { font-variant-numeric: tabular-nums }
+
+/* Type config, version B: tabs + pager */
+.tabs { display: flex; gap: 0; padding: 0 12px; overflow-x: auto; scrollbar-width: none }
+.tabs::-webkit-scrollbar { display: none }
+.tabs button { padding: 12px 8px; font-size: 12px; font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap }
+.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent) }
+.pager { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 8px; padding: 8px 20px 4px; scrollbar-width: none }
+.pager::-webkit-scrollbar { display: none }
+.page { flex: 0 0 100%; scroll-snap-align: start; border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; min-height: 150px }
+.page .name { display: flex; align-items: center; gap: 10px; font-weight: 500; margin-bottom: 4px }
+.dots { display: flex; justify-content: center; gap: 6px; padding: 6px 0 10px }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line) }
+.dots i.on { background: var(--accent) }
+
+/* Site progress */
+.ph { display: flex; align-items: baseline; justify-content: space-between; padding: 14px 20px 4px }
+.ph h2 { margin: 0; font-size: 16px; font-weight: 500 }
+.ph span { font-size: 11px; color: var(--muted) }
+.list { max-height: 360px; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 8px }
+.prow { background: var(--row); border-radius: 8px; padding: 10px 13px; display: flex; flex-direction: column; gap: 6px }
+.prow-h { display: flex; align-items: center; gap: 10px }
+.prow-h .name { width: 64px; font-weight: 500 }
+.bar { flex: 1; height: 6px; background: var(--bar); border-radius: 3px; overflow: hidden }
+.bar i { display: block; height: 100%; background: var(--done); border-radius: 3px; transition: width .3s }
+.pct { width: 40px; text-align: right; font-size: 13px; font-variant-numeric: tabular-nums }
+.metric { display: flex; align-items: center; gap: 8px; min-height: 24px; font-size: 13px }
+.metric .cnt { min-width: 48px; font-variant-numeric: tabular-nums; font-weight: 500; text-align: left; padding: 2px 6px; margin-left: -6px; border-radius: 4px }
+.metric .cnt:hover { background: var(--line) }
+.metric .cnt[data-status="done"] { color: var(--done) }
+.metric .cnt[data-status="pending"] { color: var(--pending) }
+.metric .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pending) }
+.metric .dot.done { background: var(--done) }
+.metric .lbl { color: var(--muted) }
+.empty { color: var(--muted); font-size: 13px; padding: 12px 8px; text-align: center }
+
+.actions { display: flex; justify-content: flex-end; gap: 8px; padding: 8px }
+.actions button { padding: 0 16px; min-height: 36px; font-weight: 500; letter-spacing: .05em; color: var(--accent); border-radius: 4px }
+.actions button:hover { background: var(--row) }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--surface); padding: 10px 16px; border-radius: 4px; font-size: 13px; max-width: 90vw; }
+
+/* Marker icons: the app's 24dp ImageView with the filter-type marker drawn inside */
+.mk { width: 28px; height: 28px; flex: 0 0 28px; display: grid; place-items: center }
+.mk svg { width: 24px; height: 24px; overflow: visible }
+
+/* Details sheet */
+.scrim { position: fixed; inset: 0; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; padding: 0 0 env(safe-area-inset-bottom, 0px) }
+.sheet { width: 100%; max-width: 384px; background: var(--surface); border-radius: 12px 12px 0 0; padding: 16px 20px 24px; max-height: 70vh; display: flex; flex-direction: column; gap: 10px }
+.sheet h3 { margin: 0; font-size: 16px; font-weight: 500 }
+.sheet .sub { color: var(--muted); font-size: 13px }
+.sheet ul { margin: 0; padding: 0; list-style: none; overflow-y: auto; display: flex; flex-direction: column; gap: 4px }
+.sheet li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums }
+.sheet li span:last-child { color: var(--muted) }
+.sheet .close { align-self: flex-end; color: var(--accent); font-weight: 500; padding: 8px 12px }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+
+<div class="seg" role="group" aria-label="Layout variant">
+  <button id="btnA" aria-pressed="true">A · Expandable cards</button>
+  <button id="btnB" aria-pressed="false">B · Tabs + swipe</button>
+</div>
+<p class="hint">Prototype of the proposed Refresh Mode Config dialog. Management type filters the site progress. Tap a count for the nodes behind it.</p>
+
+<div class="dialog" role="dialog" aria-labelledby="dlgTitle">
+  <div class="title" id="dlgTitle">Refresh Mode Config</div>
+
+  <div class="mgmt">
+    <div class="eyebrow">Management type</div>
+    <div class="checks" id="mgmt">
+      <label><input type="checkbox" id="mgCommercial" value="Commercial" checked> Commercial</label>
+      <label><input type="checkbox" id="mgResearch" value="Research"> Research</label>
+      <label><input type="checkbox" id="mgTest" value="Test"> Test</label>
+    </div>
+  </div>
+  <hr>
+
+  <div id="cfgA" class="cards"></div>
+  <div id="cfgB" hidden>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="pager" id="pager"></div>
+    <div class="dots" id="dots"></div>
+    <hr>
+  </div>
+
+  <div class="ph"><h2>Refresh Mode</h2><span>Scroll · tap a count for details</span></div>
+  <div class="list" id="list"></div>
+
+  <div class="actions">
+    <button id="btnCancel">CANCEL</button>
+    <button id="btnOk">OK</button>
+  </div>
+</div>
+
+<div id="sheetHost" hidden></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+// Marker glyphs copied from the app: res/drawable/node_marker_shape_*.xml paths, type colours from
+// NodeHelper.DRAWABLE_NODE_COLOR, white stroke and no halo as in PseudoNodeHelper.createFilterTypeDrawable.
+const SHAPE = {
+  circle:   { vb: 100, d: 'M17,50a33,33 0,1 0,66 0a33,33 0,1 0,-66 0z', sw: 12 },
+  triangle: { vb: 100, d: 'm12.163,82.162l38.274,-66.98l38.274,66.98l-76.548,0z', sw: 14 },
+  hexagon:  { vb: 184, d: 'm14.5,92.3755l38.93796,-67.44256l77.87761,0l38.93543,67.44256l-38.93543,67.44256l-77.87761,0l-38.93796,-67.44256z', sw: 28 },
+  diamond:  { vb: 100, d: 'M50,8.305l41.695,41.695l-41.695,41.695l-41.695,-41.695z', sw: 12 },
+};
+const MARK = {
+  'SCD':    ['circle',   '#FF9900'], // orange_peel
+  'LN SCD': ['triangle', '#FF9900'],
+  'NN SCD': ['hexagon',  '#FF9900'],
+  'RPT':    ['circle',   '#FFFF00'], // malibu
+  'TRP':    ['circle',   '#BF5FFF'], // cranberry
+  'DN TRP': ['diamond',  '#BF5FFF'],
+  'GTWY':   ['circle',   '#000000'], // GtwyHelper.DRAWABLE_GTWY_SHAPE_COLOR
+};
+// OOB WS uses ic_water_drop tinted red.
+const WATER_DROP = '<svg viewBox="0 0 24 24"><path fill="#FF0000" d="M12,2c-5.33,4.55 -8,8.48 -8,11.8c0,4.98 3.8,8.2 8,8.2s8,-3.22 8,-8.2C20,10.48 17.33,6.55 12,2zM7.83,14c0.37,0 0.67,0.26 0.74,0.62c0.41,2.22 2.28,2.98 3.64,2.87c0.43,-0.02 0.79,0.32 0.79,0.75c0,0.4 -0.32,0.73 -0.72,0.75c-2.13,0.13 -4.62,-1.09 -5.19,-4.12C7.01,14.42 7.37,14 7.83,14z"/></svg>';
+const marker = t => {
+  if (t === 'OOB WS') return `<span class="mk" aria-hidden="true">${WATER_DROP}</span>`;
+  const [shape, color] = MARK[t], s = SHAPE[shape];
+  return `<span class="mk" aria-hidden="true"><svg viewBox="0 0 ${s.vb} ${s.vb}"><path d="${s.d}" fill="${color}" stroke="#FFFFFF" stroke-width="${s.sw}" stroke-linejoin="miter"/></svg></span>`;
+};
+
+// Per-type refresh settings. Values are the ones shown in the Figma mock.
+const WEEKS = ['1 week','2 weeks','3 weeks','4 weeks'];
+const DAYS = ['1 day','2 days','3 days','5 days','7 days'];
+const CONFIG = [
+  { type:'SCD',    settings:[ ['Battery level','≤ 2.7 V'], ['CAN swap time', WEEKS, '2 weeks'], ['Last reported', DAYS, '3 days'] ] },
+  { type:'LN SCD', settings:[ ['Battery level','≤ 2.7 V'], ['CAN swap time', WEEKS, '2 weeks'], ['Last reported', DAYS, '3 days'] ] },
+  { type:'NN SCD', settings:[ ['Last installed', ['90 days','180 days','365 days'], '180 days'] ] },
+  { type:'TRP',    settings:[ ['Battery level','≤ 2.7 V'], ['Last reported', DAYS, '3 days'] ] },
+  { type:'DN TRP', settings:[ ['Battery level','≤ 2.7 V'], ['Last reported', DAYS, '3 days'] ] },
+  { type:'RPT',    settings:[ ['Last reported', DAYS, '1 day'] ] },
+];
+const state = { values: {} };
+CONFIG.forEach(c => c.settings.forEach(s => { if (Array.isArray(s[1])) state.values[c.type + '|' + s[0]] = s[2]; }));
+const summary = c => c.settings.map(s => Array.isArray(s[1]) ? state.values[c.type + '|' + s[0]].replace(/ days?/,' d').replace(/ weeks?/,' w') : s[1]).join(' · ');
+
+// Site progress. Each metric lists the nodes behind the count, keyed by management type,
+// so the Management type checkboxes filter counts. Example data only.
+const nodes = (prefix, n, mg) => Array.from({length:n}, (_, i) => ({ id: `${prefix}-${String(i+1).padStart(3,'0')}`, mg: mg[i % mg.length] }));
+const PROGRESS = [
+  { type:'GTWY',   total: nodes('GW', 3, ['Commercial']), metrics:[ { label:'Reporting', status:'done', items: nodes('GW',3,['Commercial']) } ] },
+  { type:'RPT',    total: nodes('RPT', 12, ['Commercial','Research']), metrics:[ { label:'Refreshed', status:'done', items: nodes('RPT',11,['Commercial','Research']) } ] },
+  { type:'SCD',    total: nodes('SCD', 120, ['Commercial','Commercial','Research','Test']), metrics:[
+      { label:'Refreshed', status:'done', items: nodes('SCD',100,['Commercial','Commercial','Research','Test']) },
+      { label:'Low battery', status:'pending', items: nodes('SCD',12,['Commercial','Research']) },
+      { label:'CAN swap due', status:'pending', items: nodes('SCD',8,['Commercial']) },
+      { label:'Not reported', status:'pending', items: nodes('SCD',6,['Commercial','Test']) } ] },
+  { type:'LN SCD', total: nodes('LN', 30, ['Commercial','Research']), metrics:[
+      { label:'Refreshed', status:'done', items: nodes('LN',24,['Commercial','Research']) },
+      { label:'Low battery', status:'pending', items: nodes('LN',2,['Commercial']) },
+      { label:'CAN swap due', status:'pending', items: nodes('LN',3,['Commercial','Research']) },
+      { label:'Not reported', status:'pending', items: nodes('LN',1,['Research']) } ] },
+  { type:'NN SCD', total: nodes('NN', 18, ['Commercial','Research']), metrics:[
+      { label:'Last installed', status:'pending', items: nodes('NN',4,['Commercial','Research']) } ] },
+  { type:'TRP',    total: nodes('TRP', 25, ['Commercial','Research']), metrics:[
+      { label:'Refreshed', status:'done', items: nodes('TRP',24,['Commercial','Research']) },
+      { label:'Low battery', status:'pending', items: nodes('TRP',2,['Commercial']) } ] },
+  { type:'DN TRP', total: nodes('DN', 10, ['Commercial']), metrics:[
+      { label:'Refreshed', status:'done', items: nodes('DN',9,['Commercial']) },
+      { label:'Low battery', status:'pending', items: nodes('DN',0,['Commercial']) } ] },
+  { type:'OOB WS', total: nodes('WS', 2, ['Commercial']), metrics:[ { label:'Out of box', status:'pending', items: nodes('WS',2,['Commercial']) } ] },
+];
+
+const $ = id => document.getElementById(id);
+const selectedMg = () => [...document.querySelectorAll('#mgmt input:checked')].map(i => i.value);
+
+function settingRow(type, s) {
+  const [label, opts, def] = s;
+  if (!Array.isArray(opts)) return `<div class="setting"><span class="lbl">${label}</span><span class="static">${opts}</span></div>`;
+  const key = type + '|' + label;
+  return `<div class="setting"><label class="lbl" for="${key}">${label}</label><select id="${key}" data-key="${key}">${opts.map(o => `<option${o === state.values[key] ? ' selected' : ''}>${o}</option>`).join('')}</select></div>`;
+}
+
+function renderConfig() {
+  $('cfgA').innerHTML = CONFIG.map((c, i) => `
+    <details class="card" id="card-${i}"${i === 0 ? ' open' : ''}>
+      <summary class="card-h">${marker(c.type)}<span class="name">${c.type}</span><span class="sum">${summary(c)}</span><span class="chev"></span></summary>
+      <div class="card-b">${c.settings.map(s => settingRow(c.type, s)).join('')}</div>
+    </details>`).join('');
+  $('tabs').innerHTML = CONFIG.map((c, i) => `<button role="tab" id="tab-${i}" aria-selected="${i === 0}" data-i="${i}">${c.type}</button>`).join('');
+  $('pager').innerHTML = CONFIG.map((c, i) => `<div class="page" id="page-${i}"><div class="name">${marker(c.type)}${c.type}</div>${c.settings.map(s => settingRow(c.type, s)).join('')}</div>`).join('');
+  $('dots').innerHTML = CONFIG.map((_, i) => `<i${i === 0 ? ' class="on"' : ''}></i>`).join('');
+}
+
+function renderProgress() {
+  const mg = selectedMg();
+  const rows = PROGRESS.map(p => {
+    const total = p.total.filter(n => mg.includes(n.mg)).length;
+    if (!total) return '';
+    const done = p.metrics.filter(m => m.status === 'done').reduce((a, m) => a + m.items.filter(n => mg.includes(n.mg)).length, 0);
+    const pct = Math.round(done / total * 100);
+    return `<div class="prow">
+      <div class="prow-h">${marker(p.type)}<span class="name">${p.type}</span><div class="bar"><i style="width:${pct}%"></i></div><span class="pct">${pct}%</span></div>
+      ${p.metrics.map((m, mi) => { const n = m.items.filter(x => mg.includes(x.mg)).length; return `
+      <div class="metric"><span class="dot ${m.status}"></span><button class="cnt" data-status="${m.status}" data-type="${p.type}" data-mi="${mi}">${n}/${total}</button><span class="lbl">${m.label}</span></div>`; }).join('')}
+    </div>`;
+  }).join('');
+  $('list').innerHTML = rows || '<div class="empty">No nodes match the selected management types.</div>';
+}
+
+function openSheet(type, mi) {
+  const p = PROGRESS.find(x => x.type === type), m = p.metrics[mi], mg = selectedMg();
+  const items = m.items.filter(n => mg.includes(n.mg));
+  $('sheetHost').innerHTML = `<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-labelledby="shTitle">
+    <h3 id="shTitle">${type} · ${m.label}</h3>
+    <div class="sub">${items.length} node${items.length === 1 ? '' : 's'} · ${mg.join(', ') || 'no management type selected'}</div>
+    <ul>${items.length ? items.map(n => `<li><span>${n.id}</span><span>${n.mg}</span></li>`).join('') : '<li><span>Nothing to show</span><span></span></li>'}</ul>
+    <button class="close" id="shClose">CLOSE</button></div></div>`;
+  $('sheetHost').hidden = false;
+  $('shClose').focus();
+}
+function closeSheet() { $('sheetHost').hidden = true; $('sheetHost').innerHTML = ''; }
+
+let toastTimer;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 2200); }
+
+function setVariant(b) {
+  $('btnA').setAttribute('aria-pressed', String(!b)); $('btnB').setAttribute('aria-pressed', String(b));
+  $('cfgA').hidden = b; $('cfgB').hidden = !b;
+  try { localStorage.setItem('rmc-variant', b ? 'B' : 'A'); } catch (e) {}
+}
+
+renderConfig(); renderProgress();
+try { setVariant(localStorage.getItem('rmc-variant') === 'B'); } catch (e) { setVariant(false); }
+
+$('btnA').onclick = () => setVariant(false);
+$('btnB').onclick = () => setVariant(true);
+$('mgmt').addEventListener('change', renderProgress);
+document.addEventListener('change', e => {
+  const key = e.target.dataset && e.target.dataset.key; if (!key) return;
+  state.values[key] = e.target.value;
+  document.querySelectorAll(`select[data-key="${CSS.escape(key)}"]`).forEach(s => { if (s !== e.target) s.value = e.target.value; });
+  const i = CONFIG.findIndex(c => key.startsWith(c.type + '|'));
+  document.querySelector(`#card-${i} .sum`).textContent = summary(CONFIG[i]);
+});
+// Only one card open at a time, like a settings accordion.
+$('cfgA').addEventListener('toggle', e => { if (e.target.open) $('cfgA').querySelectorAll('details[open]').forEach(d => { if (d !== e.target) d.open = false; }); }, true);
+$('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) $(`page-${b.dataset.i}`).scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' }); });
+$('pager').addEventListener('scroll', () => {
+  const pg = $('pager'), i = Math.round(pg.scrollLeft / (pg.firstElementChild.offsetWidth + 8));
+  document.querySelectorAll('#tabs button').forEach((b, j) => b.setAttribute('aria-selected', String(j === i)));
+  document.querySelectorAll('#dots i').forEach((d, j) => d.classList.toggle('on', j === i));
+}, { passive: true });
+$('list').addEventListener('click', e => { const b = e.target.closest('.cnt'); if (b) openSheet(b.dataset.type, +b.dataset.mi); });
+$('sheetHost').addEventListener('click', e => { if (e.target.id === 'scrim' || e.target.id === 'shClose') closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+$('btnOk').onclick = () => toast(`Saved · ${selectedMg().join(', ') || 'no management type'} · ${CONFIG.map(c => c.type + ' ' + summary(c)).join(' / ')}`);
+$('btnCancel').onclick = () => toast('Cancelled. Nothing changed.');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0;font:14px system-ui}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<title>Node Swap</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+<style>
+/* Layout: phone-width screen on a canvas; toolbar above picks the node type being swapped. Light only, by request. */
+:root {
+  --bg: #e9ebe6; --surface: #ffffff; --fg: #1d1f1b; --muted: #6b6f68; --line: #dcdfd9;
+  --cur-head: #eeeeee; --cur-btn: #e0e0e0; --cur-check: #ff4081; --cur-chip: #2e7d32; --cur-swatch: #03a9f4; --err: #f00;
+  --scrim: rgba(0,0,0,.35); --font: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif; color-scheme: light;
+}
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; padding: 0 16px; padding-block: 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; min-height: 100% }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid #2e7d4f; outline-offset: 2px }
+input, select, textarea { font: inherit; color: inherit }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; background: var(--surface) }
+.seg button { padding: 6px 12px; border-radius: 999px; font-size: 13px; color: var(--muted) }
+.seg button[aria-pressed="true"] { background: #2e7d4f; color: #fff }
+.hint { color: var(--muted); font-size: 12px; max-width: 400px; text-align: center; text-wrap: balance; margin: 0 }
+.phone { width: 100%; max-width: 400px; background: var(--surface); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.18); overflow: hidden; display: flex; flex-direction: column; min-height: 640px }
+.phone > .scroll { flex: 1; overflow-y: auto }
+.warnline { display: flex; align-items: center; gap: 10px; color: var(--err); padding: 8px 0 }
+.tri { width: 0; height: 0; border-left: 11px solid transparent; border-right: 11px solid transparent; border-bottom: 20px solid #f5c400; position: relative; flex: 0 0 auto }
+.tri::after { content: "!"; position: absolute; left: -3px; top: 3px; font-size: 13px; font-weight: 700; color: #1d1f1b; line-height: 1 }
+
+.mac { background: var(--cur-head); text-align: center; font-weight: 700; color: var(--muted); padding: 6px; font-size: 15px }
+.ttl { display: flex; align-items: baseline; gap: 24px; padding: 18px 16px 8px }
+.ttl h1 { margin: 0; font-size: 24px; font-weight: 400 }
+.ttl b { font-size: 15px }
+.icons { display: flex; gap: 8px; padding: 10px 2px }
+.icons button { flex: 1; height: 56px; background: var(--cur-btn); border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,.25); display: grid; place-items: center }
+.icons svg { width: 22px; height: 22px; fill: currentColor }
+.r { display: grid; grid-template-columns: 96px 1fr; align-items: center; min-height: 56px; padding: 0 16px; gap: 8px }
+.r .l { font-weight: 700; color: var(--muted) }
+.r .l.dark { color: var(--fg) }
+.ul { border: 0; border-bottom: 2px solid var(--line); background: none; width: 100%; padding: 8px 2px; font-size: 20px; color: var(--muted) }
+.alias { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start }
+.cb { display: flex; flex-direction: column; align-items: center; font-size: 12px; gap: 4px; padding-top: 2px }
+.cb input { width: 22px; height: 22px; accent-color: var(--cur-check); margin: 0 }
+/* New field under review: highlighted so it stands out from the existing rows */
+.r.new { background: #fff8d6 }
+.r.new .big { display: flex; align-items: center; gap: 12px }
+.r.new .big input { width: 22px; height: 22px; margin: 0; accent-color: var(--cur-check) }
+.r.new .tag { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: #fff; background: #d9a400; border-radius: 3px; padding: 2px 7px }
+.r.new { grid-template-rows: auto auto; padding-block: 8px }
+.r.new .note { grid-column: 1 / -1; font-size: 12px; color: #6b5600; line-height: 1.35 }
+/* Flow steps */
+.steps { display: flex; align-items: center; gap: 8px; font-size: 13px; flex-wrap: wrap; justify-content: center; max-width: 520px }
+.steps button { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted) }
+.steps button[aria-pressed="true"] { background: #2e7d4f; color: #fff; border-color: #2e7d4f }
+.steps .sep { color: var(--muted) }
+/* Map screen */
+.mapbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--cur-head); font-weight: 700; color: var(--muted); font-size: 15px }
+.mapbar .cnt { font-weight: 400; font-size: 12px }
+.mapwrap { flex: 1; background: #dfe8d2; position: relative }
+.mapwrap svg { width: 100%; height: auto; display: block; touch-action: manipulation }
+.node { cursor: pointer }
+.node:hover .halo, .node:focus-visible .halo { opacity: .9 }
+.node:focus-visible { outline: none }
+.badge { pointer-events: none }
+.maplegend { display: flex; gap: 10px; align-items: center; padding: 10px 14px; font-size: 12px; line-height: 1.35; color: #6b5600 }
+.maplegend.new { background: #fff8d6 }
+.question { padding: 10px 14px 12px; font-size: 12px; line-height: 1.4; background: #fdecea; color: #7a1f1a }
+.question b { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px }
+.question p { margin: 0 }
+.mk-bubble { width: 34px; height: 40px; flex: 0 0 auto }
+.mac { position: relative }
+.back { position: absolute; left: 8px; top: 2px; font-size: 18px; color: var(--muted); padding: 0 6px }
+.gone { font-size: 12px; font-weight: 400; color: #6b5600; background: #fff8d6; padding: 4px 8px; line-height: 1.35 }
+.legend { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin: -6px 0 0; max-width: 400px; text-align: left }
+.legend .swatch { width: 18px; height: 14px; background: #fff8d6; border: 1px solid var(--line); flex: 0 0 auto }
+.radios { display: flex; gap: 48px; font-size: 18px }
+.radios label { display: flex; align-items: center; gap: 10px }
+.radios input { width: 22px; height: 22px; margin: 0; accent-color: var(--muted) }
+.sp { display: flex; align-items: center; justify-content: space-between; font-size: 20px; color: var(--muted); width: 100%; background: none; padding: 6px 0 }
+.sp select { appearance: none; background: none; border: 0; font-size: 20px; color: var(--muted); width: 100%; padding: 0 }
+.chev { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 8px solid var(--muted); flex: 0 0 auto }
+.formu { display: flex; align-items: center; gap: 10px; font-size: 18px; color: var(--muted) }
+.sw { width: 32px; height: 32px; background: var(--cur-swatch); flex: 0 0 auto }
+.chip { background: var(--cur-chip); color: #fff; padding: 2px 8px; font-size: 17px; width: max-content }
+.lure { border: 0; border-bottom: 2px solid var(--line); padding: 8px 2px; font-size: 18px; color: var(--muted) }
+.nav { height: 34px; background: var(--cur-head); display: grid; place-items: center }
+.nav i { width: 210px; height: 6px; border-radius: 3px; background: var(--muted); opacity: .6 }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--surface); padding: 10px 16px; border-radius: 4px; font-size: 13px; max-width: 90vw }
+.scrim { position: fixed; inset: 0; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center }
+.sheet { width: 100%; max-width: 400px; background: var(--surface); border-radius: 12px 12px 0 0; padding: 16px 20px 24px; display: flex; flex-direction: column; gap: 10px }
+.sheet h3 { margin: 0; font-size: 16px; font-weight: 500 }
+.sheet textarea { background: #f4f5f2; border: 1px solid var(--line); border-radius: 6px; padding: 10px; min-height: 80px; resize: vertical }
+.sheet .acts { display: flex; justify-content: flex-end; gap: 8px }
+.sheet .acts button { padding: 8px 14px; font-weight: 500; color: #2e7d4f; border-radius: 6px }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+
+<div class="steps" role="group" aria-label="Flow" id="steps">
+  <button data-step="1" aria-pressed="true">1 · Replace marker</button><span class="sep">&#8594;</span>
+  <button data-step="2" aria-pressed="false">2 · Node Swap</button><span class="sep">&#8594;</span>
+  <button data-step="3-1" aria-pressed="false">3-1 · Swapped, Removed? checked</button>
+  <button data-step="3-2" aria-pressed="false">3-2 · Swapped, Removed? unchecked</button>
+</div>
+<div class="seg" role="group" aria-label="Node type being swapped" id="types" hidden></div>
+<p class="hint" id="hint">Map with the property's nodes. Nodes carrying the replace marker are flagged for swap. Tap one to open Node Swap.</p>
+<p class="legend"><span class="swatch"></span><b>Highlighted = this change.</b> Everything else is the screen as it is today.</p>
+
+<div class="phone" id="map">
+  <div class="mapwrap"><svg id="mapSvg" viewBox="0 0 400 600" role="img" aria-label="Map of nodes"></svg></div>
+  <div class="maplegend new" id="legReplace">
+    <svg class="mk-bubble" viewBox="-20 -42 40 48" aria-hidden="true"><path d="M-13,-38 h26 a4,4 0 0 1 4,4 v18 a4,4 0 0 1 -4,4 h-8 l-5,6 l-5,-6 h-8 a4,4 0 0 1 -4,-4 v-18 a4,4 0 0 1 4,-4 z" fill="#fff" stroke="#1d1f1b" stroke-width="1"/><g transform="translate(-8,-33) scale(0.3077)"><use href="#replaceIcon" fill="#1d1f1b"/></g><circle cy="0" r="3" fill="#FF9900"/></svg>
+    <div><b>Replace marker</b> (this change): node flagged for swap. Tap it to start Node Swap. Other nodes open node details as today.</div>
+  </div>
+  <div class="maplegend new" id="legDone" hidden>
+    <svg class="mk-bubble" viewBox="-20 -42 40 48" aria-hidden="true"><circle cy="-12" r="9" fill="#00CC00" opacity=".55"/><circle cy="-12" r="5" fill="#FF9900"/></svg>
+    <div><b>After swap, Removed? checked</b>: the old node left the field. Marker cleared, node shown as a normal NN SCD.</div>
+  </div>
+  <div class="maplegend new" id="legBin" hidden>
+    <svg class="mk-bubble" viewBox="-20 -42 40 48" aria-hidden="true"><path d="M-13,-38 h26 a4,4 0 0 1 4,4 v18 a4,4 0 0 1 -4,4 h-8 l-5,6 l-5,-6 h-8 a4,4 0 0 1 -4,-4 v-18 a4,4 0 0 1 4,-4 z" fill="#fff" stroke="#1d1f1b" stroke-width="1"/><g transform="translate(-7,-33) scale(0.0343)"><use href="#binIcon" fill="#1d1f1b"/></g><circle cy="0" r="3" fill="#FF9900"/></svg>
+    <div><b>After swap, Removed? unchecked</b>: bin marker. The old node is still in the field and needs to be collected.</div>
+  </div>
+  <div class="question" id="qBin" hidden>
+    <b>Open question</b>
+    <p>We need a new action to clear the bin marker: find the device that was not removed last time and discard it. Where does this action live (node details, long press on the marker, a "Collect" button in Refresh Mode), and what does it write back (clear the removal flag, log a removal, both)?</p>
+  </div>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><g id="replaceIcon">
+<path d="M20,37.5c0-0.8-0.7-1.5-1.5-1.5h-15C2.7,36,2,36.7,2,37.5v11C2,49.3,2.7,50,3.5,50h15c0.8,0,1.5-0.7,1.5-1.5V37.5z"/>
+<path d="M8.1,22H3.2c-1,0-1.5,0.9-0.9,1.4l8,8.3c0.4,0.3,1,0.3,1.4,0l8-8.3c0.6-0.6,0.1-1.4-0.9-1.4h-4.7c0-5,4.9-10,9.9-10V6C15,6,8.1,13,8.1,22z"/>
+<path d="M41.8,20.3c-0.4-0.3-1-0.3-1.4,0l-8,8.3c-0.6,0.6-0.1,1.4,0.9,1.4h4.8c0,6-4.1,10-10.1,10v6c9,0,16.1-7,16.1-16H49c1,0,1.5-0.9,0.9-1.4L41.8,20.3z"/>
+<path d="M50,3.5C50,2.7,49.3,2,48.5,2h-15C32.7,2,32,2.7,32,3.5v11c0,0.8,0.7,1.5,1.5,1.5h15c0.8,0,1.5-0.7,1.5-1.5V3.5z"/>
+</g><g id="binIcon">
+<path d="M87.748,388.784c0.461,11.01,9.521,19.699,20.539,19.699h191.911c11.018,0,20.078-8.689,20.539-19.699l13.705-289.316H74.043L87.748,388.784z M247.655,171.329c0-4.61,3.738-8.349,8.35-8.349h13.355c4.609,0,8.35,3.738,8.35,8.349v165.293c0,4.611-3.738,8.349-8.35,8.349h-13.355c-4.61,0-8.35-3.736-8.35-8.349V171.329z M189.216,171.329c0-4.61,3.738-8.349,8.349-8.349h13.355c4.609,0,8.349,3.738,8.349,8.349v165.293c0,4.611-3.737,8.349-8.349,8.349h-13.355c-4.61,0-8.349-3.736-8.349-8.349V171.329L189.216,171.329z M130.775,171.329c0-4.61,3.738-8.349,8.349-8.349h13.356c4.61,0,8.349,3.738,8.349,8.349v165.293c0,4.611-3.738,8.349-8.349,8.349h-13.356c-4.61,0-8.349-3.736-8.349-8.349V171.329z"/>
+<path d="M343.567,21.043h-88.535V4.305c0-2.377-1.927-4.305-4.305-4.305h-92.971c-2.377,0-4.304,1.928-4.304,4.305v16.737H64.916c-7.125,0-12.9,5.776-12.9,12.901V74.47h304.451V33.944C356.467,26.819,350.692,21.043,343.567,21.043z"/>
+</g></defs></svg>
+
+<div class="phone" id="cur" hidden>
+  <div class="scroll">
+    <div class="mac"><button class="back" id="backMap" title="Back to map">&#8592;</button>Current Mac/Node Id: <span id="cMac"></span></div>
+    <div class="ttl"><h1>Node Swap</h1><b id="cNfc">Please Scan NFC</b><span class="gone" id="cRemovedNote" hidden>Removed in this change: "Please Scan NFC" and the QR button (not supported for NN SCD)</span></div>
+    <div class="icons">
+      <button id="cQr" title="Scan QR"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm2 2v4h4V5zm8-2h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zm8-2h3v3h-3zm5 0h3v3h-3zm-5 5h3v3h-3zm5 0h3v3h-3zm-2.5-2.5h3v3h-3z"/></svg></button>
+      <button id="cCam" title="Photo"><svg viewBox="0 0 24 24"><path d="M9 3l-1.5 2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.5L15 3zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
+      <button id="cOk" title="Confirm"><svg viewBox="0 0 24 24"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg></button>
+    </div>
+    <div class="r"><span class="l">alias:</span>
+      <div class="alias"><input class="ul" id="cAlias" value="Node 549305" readonly><label class="cb"><input type="checkbox" id="cPrev" checked>Use previous alias</label></div></div>
+    <div class="r"><span class="l" id="cIdLabel">N.Id:</span><input class="ul" id="cId" placeholder="C0303B38791228"></div>
+    <div class="r" id="cVoucherRow" hidden><span class="l">Voucher:</span><span class="ul" style="font-size:16px">Tap Paste Icon To Paste Voucher</span></div>
+    <div class="r new" id="cRemovedRow" hidden><span class="l dark">Removed?</span>
+      <label class="big"><input type="checkbox" id="cRemoved" checked><span class="tag">ADDED IN THIS CHANGE</span></label>
+      <div class="note">New row for NN SCD only. Default checked. Unchecked means the old node is still in the field.</div></div>
+    <div class="r" id="cReuseRow"><span class="l dark">Reuse<br>Can?</span>
+      <div class="radios"><label><input type="radio" name="cReuse" value="no">No</label><label><input type="radio" name="cReuse" value="yes">Yes</label></div></div>
+    <div class="r" id="cDip" style="min-height:40px"><div class="warnline" style="grid-column:1/-1"><span class="tri"></span>Confirm delay DIP switches are all down (no delay).</div></div>
+    <div class="r" id="cGenRow" hidden><span class="l">Gen:</span><div class="sp"><select><option>GEN 2</option><option>GEN 3</option></select><span class="chev"></span></div></div>
+    <div class="r"><span class="l">Reason:</span><div class="sp"><select id="cReason"><option value="">&lt;Select Reason&gt;</option></select><span class="chev"></span></div></div>
+    <div class="r" id="cOrg" style="min-height:40px"><div class="warnline" style="grid-column:1/-1"><span class="tri"></span>Property contains organic formulations</div></div>
+    <div class="r" id="cFormuRow"><span class="l">Formu:</span><div class="sp"><div class="formu"><span class="sw"></span><div><div>CM Eco</div><div class="chip">Active</div></div></div><span class="chev"></span></div></div>
+    <div class="r" id="cLureRow" hidden><span class="l">Lure:</span><div class="lure">CM-DA + NOW L2 (2 selected)</div></div>
+  </div>
+  <div class="nav"><i></i></div>
+</div>
+
+<div id="sheetHost" hidden></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+// Rows per node type, mirroring the NodeSwapPresenter branches.
+const TYPES = {
+  'SCD':    { old:'C0303B61549305', newId:'C0303B38791228', idLabel:'Mac:',  reuse:true,  formu:true,  gen:true,  dip:false, organic:true,  lure:false, voucher:false, qr:true,  nfc:true,  editable:true },
+  'LN SCD': { old:'C0303B61549305', newId:'C0303B38791228', idLabel:'Mac:',  reuse:true,  formu:true,  gen:false, dip:false, organic:true,  lure:false, voucher:false, qr:true,  nfc:true,  editable:true },
+  'NN SCD': { old:'C0303B61549305', newId:'C0303B38791228', idLabel:'N.Id:', reuse:true,  formu:true,  gen:false, dip:true,  organic:true,  lure:false, voucher:false, qr:false, nfc:false, editable:false }, // this change: no QR / NFC, not supported
+  'TRP':    { old:'C0303B61549305', newId:'C0303B38791228', idLabel:'Mac:',  reuse:false, formu:false, gen:false, dip:false, organic:false, lure:true,  voucher:false, qr:true,  nfc:true,  editable:true },
+  'GTWY':   { old:'TW-GW-00417',    newId:'TW-GW-00982',    idLabel:'N.Id:', reuse:false, formu:false, gen:false, dip:false, organic:false, lure:false, voucher:true,  qr:false, nfc:false, editable:true },
+};
+// Reasons come from the server; these are examples. "Other" is always last.
+const REASONS = ['Offline', 'Low battery', 'Physical damage', 'Theft / cannot find', 'Service issue', 'Other'];
+
+const $ = id => document.getElementById(id);
+const state = { type: 'NN SCD', other: '', nodeId: null, step: '1' };
+
+function renderTypes() {
+  $('types').innerHTML = Object.keys(TYPES).map(t => `<button data-t="${t}" aria-pressed="${t === state.type}">${t}</button>`).join('');
+}
+function applyType() {
+  const t = TYPES[state.type];
+  $('cMac').textContent = state.nodeId && state.type === 'NN SCD' ? state.nodeId : t.old;
+  $('cNfc').hidden = !t.nfc;
+  $('cQr').hidden = !t.qr;
+  $('cRemovedNote').hidden = state.type !== 'NN SCD';
+  $('cIdLabel').textContent = t.idLabel;
+  $('cId').placeholder = t.newId; $('cId').value = ''; $('cId').readOnly = !t.editable;
+  $('cVoucherRow').hidden = !t.voucher;
+  $('cReuseRow').hidden = !t.reuse;
+  $('cRemovedRow').hidden = state.type !== 'NN SCD'; $('cRemoved').checked = true;
+  $('cDip').hidden = !t.dip;
+  $('cGenRow').hidden = !t.gen;
+  $('cOrg').hidden = !t.organic;
+  $('cFormuRow').hidden = !t.formu;
+  $('cLureRow').hidden = !t.lure;
+  document.querySelectorAll('input[name=cReuse]').forEach(r => r.checked = r.value === 'no'); // default: No
+  $('cReason').value = '';
+}
+let toastTimer;
+function toast(msg) { const el = $('toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => el.hidden = true, 2400); }
+function otherSheet() {
+  $('sheetHost').innerHTML = `<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-labelledby="shT"><h3 id="shT">Other reason</h3><textarea id="shTxt" placeholder="Describe the reason">${state.other}</textarea><div class="acts"><button id="shCancel">CANCEL</button><button id="shOk">OK</button></div></div></div>`;
+  $('sheetHost').hidden = false; $('shTxt').focus();
+}
+function closeSheet() { $('sheetHost').hidden = true; $('sheetHost').innerHTML = ''; }
+
+// ---- Map screen: markers drawn like the app (node_marker_shape_* paths, type colour, white stroke, state halo) ----
+const SHAPE = {
+  circle:   { vb: 100, d: 'M17,50a33,33 0,1 0,66 0a33,33 0,1 0,-66 0z', sw: 12 },
+  triangle: { vb: 100, d: 'm12.163,82.162l38.274,-66.98l38.274,66.98l-76.548,0z', sw: 14 },
+  hexagon:  { vb: 184, d: 'm14.5,92.3755l38.93796,-67.44256l77.87761,0l38.93543,67.44256l-38.93543,67.44256l-77.87761,0l-38.93796,-67.44256z', sw: 28 },
+  diamond:  { vb: 100, d: 'M50,8.305l41.695,41.695l-41.695,41.695l-41.695,-41.695z', sw: 12 },
+};
+const MARK = { 'SCD': ['circle', '#FF9900'], 'LN SCD': ['triangle', '#FF9900'], 'NN SCD': ['hexagon', '#FF9900'], 'RPT': ['circle', '#FFFF00'], 'TRP': ['circle', '#BF5FFF'], 'GTWY': ['circle', '#000000'] };
+const STATE_COLOR = { online: '#00CC00', offline: '#FF0000', pending: '#4FD7DC' };
+// Deterministic layout: tree rows with nodes placed along them. Example data only.
+const NODES = (() => {
+  let s = 7; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  const list = [];
+  // Map shows NN SCDs only.
+  const spots = [[110, 150], [290, 220], [120, 400], [300, 480]];
+  spots.forEach(([x, y], i) => list.push({ id: `C0303B${String(61549305 + i * 7919).slice(-8)}`, type: 'NN SCD', x, y, state: 'online', marker: null }));
+  // Nodes flagged for replacement in this change. marker: 'replace' | 'bin' | null
+  [0, 3].forEach(i => list[i].marker = 'replace');
+  return list;
+})();
+const ICON = {
+  replace: `<g transform="translate(-8,-33) scale(${16 / 52})"><use href="#replaceIcon" fill="#1d1f1b"/></g>`,
+  bin:     `<g transform="translate(-7,-33) scale(${14 / 408.483})"><use href="#binIcon" fill="#1d1f1b"/></g>`,
+};
+const LABEL = { replace: ', flagged for swap', bin: ', old node still to be collected' };
+function markerSvg(n) {
+  const [shape, color] = MARK[n.type], s = SHAPE[shape], k = 20 / s.vb;
+  // Marker sits in a callout bubble whose tail is anchored on the node.
+  const badge = n.marker ? `<g class="badge"><path d="M-13,-38 h26 a4,4 0 0 1 4,4 v18 a4,4 0 0 1 -4,4 h-8 l-5,6 l-5,-6 h-8 a4,4 0 0 1 -4,-4 v-18 a4,4 0 0 1 4,-4 z" fill="#fff" stroke="#1d1f1b" stroke-width="1"/>${ICON[n.marker]}</g>` : '';
+  return `<g class="node" data-id="${n.id}" tabindex="0" role="button" aria-label="${n.type} ${n.id}${LABEL[n.marker] || ''}" transform="translate(${n.x.toFixed(1)},${n.y.toFixed(1)})">
+    <circle class="halo" r="12" fill="${STATE_COLOR.online}" opacity=".55"/>
+    <g transform="translate(-10,-10) scale(${k.toFixed(4)})"><path d="${s.d}" fill="${color}"/></g>${badge}</g>`;
+}
+// The node the flow follows: the one tapped in step 1, otherwise the first flagged node.
+const target = () => NODES.find(n => n.id === state.nodeId) || NODES.find(n => n.marker === 'replace');
+function renderMap(step) {
+  // Sample satellite base map (ESRI World Imagery tiles, almond orchards near Hughson, CA). Published next to the page.
+  const base = '<image href="map.jpg" x="0" y="0" width="400" height="600" preserveAspectRatio="xMidYMid slice"/>';
+  const t = target();
+  // Steps 3-1 / 3-2 show the outcome for the target node without changing the base data.
+  const view = NODES.map(n => n === t && step === '3-1' ? { ...n, marker: null } : n === t && step === '3-2' ? { ...n, marker: 'bin' } : n);
+  const sorted = view.sort((a, b) => !!a.marker - !!b.marker); // marked nodes drawn last, on top
+  $('mapSvg').innerHTML = base + sorted.map(markerSvg).join('');
+}
+const HINT = {
+  '1': 'Map with the property\'s NN SCDs. Nodes carrying the replace marker are flagged for swap. Tap one to open Node Swap.',
+  '2': 'Node Swap screen for the tapped node. Fill it in and press the check button.',
+  '3-1': 'Back on the map after the swap with Removed? checked: the marker is gone.',
+  '3-2': 'Back on the map after the swap with Removed? unchecked: the marker turns into a bin.',
+};
+function showStep(step, node) {
+  state.step = step;
+  document.querySelectorAll('#steps button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.step === step)));
+  const swap = step === '2';
+  $('map').hidden = swap; $('cur').hidden = !swap; $('types').hidden = !swap;
+  $('hint').textContent = HINT[step];
+  $('legReplace').hidden = step !== '1'; $('legDone').hidden = step !== '3-1'; $('legBin').hidden = step !== '3-2'; $('qBin').hidden = step !== '3-2';
+  if (node) { state.type = node.type; state.nodeId = node.id; renderTypes(); applyType(); }
+  if (!swap) renderMap(step);
+}
+
+$('cReason').innerHTML = '<option value="">&lt;Select Reason&gt;</option>' + REASONS.map(r => `<option>${r}</option>`).join('');
+renderTypes(); applyType(); showStep('1');
+$('steps').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const s = b.dataset.step;
+  showStep(s, s === '2' ? target() : null);
+});
+$('backMap').onclick = () => showStep('1');
+$('mapSvg').addEventListener('click', e => {
+  const g = e.target.closest('.node'); if (!g) return;
+  const n = NODES.find(x => x.id === g.dataset.id);
+  if (state.step !== '1') { toast('Go back to step 1 to start another swap.'); return; }
+  if (n.marker === 'replace') showStep('2', n);
+  else if (n.marker === 'bin') toast(`${n.id}: swapped, old node still in the field. Collect it to clear the marker.`);
+  else toast(`${n.type} ${n.id}: opens node details, unchanged.`);
+});
+$('mapSvg').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.target.closest('.node')?.dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
+
+$('types').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; state.type = b.dataset.t; renderTypes(); applyType(); });
+$('cQr').onclick = () => { $('cId').value = TYPES[state.type].newId; toast(`Scanned ${TYPES[state.type].newId}`); };
+$('cCam').onclick = () => toast('Camera opens here.');
+$('cPrev').onchange = e => { $('cAlias').readOnly = e.target.checked; if (e.target.checked) $('cAlias').value = 'Node 549305'; };
+$('cReason').onchange = e => { if (e.target.value === 'Other') otherSheet(); };
+$('cOk').onclick = () => {
+  const t = TYPES[state.type]; const errs = [];
+  if (!$('cId').value && t.editable) errs.push('Mac/Node Id');
+  if (!$('cReason').value) errs.push('Reason');
+  if (t.reuse && !document.querySelector('input[name=cReuse]:checked')) errs.push('Reuse Can');
+  if (errs.length) { toast(`Swap Node Failed: ${errs.join(', ')} missing`); return; }
+  if (state.type === 'NN SCD') {
+    // This change: Removed? checked → step 3-1 (marker cleared); unchecked → step 3-2 (bin marker).
+    const checked = $('cRemoved').checked;
+    showStep(checked ? '3-1' : '3-2');
+    toast(checked ? 'Node swapped. Old node removed, marker cleared.' : 'Node swapped. Old node not removed: bin marker shown.');
+    return;
+  }
+  toast('Node swapped.');
+};
+$('sheetHost').addEventListener('click', e => {
+  if (e.target.id === 'scrim' || e.target.id === 'shCancel') { closeSheet(); return; }
+  if (e.target.id === 'shOk') { state.other = $('shTxt').value; closeSheet(); toast(state.other ? 'Other reason saved.' : 'No reason entered.'); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+</script>
+
+</body>
+</html>
