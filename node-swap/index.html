@@ -224,7 +224,7 @@ input, select, textarea { font: inherit; color: inherit }
 const TYPES = {
   'SCD':    { old:'C0303B61549305', newId:'C0303B38791228', idLabel:'Mac:',  reuse:true,  formu:true,  gen:true,  dip:false, organic:true,  lure:false, voucher:false, qr:true,  nfc:true,  editable:true },
   'LN SCD': { old:'C0303B61549305', newId:'C0303B38791228', idLabel:'Mac:',  reuse:true,  formu:true,  gen:false, dip:false, organic:true,  lure:false, voucher:false, qr:true,  nfc:true,  editable:true },
-  'NN SCD': { old:'C0303B61549305', newId:'C0303B38791228', idLabel:'N.Id:', reuse:true,  formu:true,  gen:false, dip:true,  organic:true,  lure:false, voucher:false, qr:false, nfc:false, editable:false }, // this change: no QR / NFC, not supported
+  'NN SCD': { old:'C0303B61549305', newId:'C0303B38791228', idLabel:'N.Id:', reuse:false, formu:true,  gen:false, dip:true,  organic:true,  lure:false, voucher:false, qr:false, nfc:false, editable:false }, // Refresh Node Swap: no QR / NFC / Reuse Can
   'TRP':    { old:'C0303B61549305', newId:'C0303B38791228', idLabel:'Mac:',  reuse:false, formu:false, gen:false, dip:false, organic:false, lure:true,  voucher:false, qr:true,  nfc:true,  editable:true },
   'GTWY':   { old:'TW-GW-00417',    newId:'TW-GW-00982',    idLabel:'N.Id:', reuse:false, formu:false, gen:false, dip:false, organic:false, lure:false, voucher:true,  qr:false, nfc:false, editable:true },
 };
