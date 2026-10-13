@@ -134,7 +134,8 @@ input, select, textarea { font: inherit; color: inherit }
   <button data-step="2" aria-pressed="false">2 · Node details</button><span class="sep">&#8594;</span>
   <button data-step="3" aria-pressed="false">3 · Refresh Node Swap</button><span class="sep">&#8594;</span>
   <button data-step="4-1" aria-pressed="false">4-1 · Swapped, Removed? checked</button>
-  <button data-step="4-2" aria-pressed="false">4-2 · Swapped, Removed? unchecked</button>
+  <button data-step="4-2" aria-pressed="false">4-2 · Swapped, Removed? unchecked</button><span class="sep">&#8594;</span>
+  <button data-step="5" aria-pressed="false">5 · Collect old node</button>
 </div>
 <p class="hint" id="hint">Map with the property's nodes. Nodes carrying the replace marker are flagged for swap. Tap one to open Node Swap.</p>
 <p class="legend"><span class="swatch"></span><b>Highlighted = this change.</b> Everything else is the screen as it is today.</p>
@@ -157,6 +158,7 @@ input, select, textarea { font: inherit; color: inherit }
           <button title="Battery swap"><svg viewBox="0 0 24 24"><path d="M2 8h7v12H2zM15 8h7v12h-7zM4 6h3M17 6h3M9 14h6l-2-2M9 14l2 2" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
           <button title="Move"><svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
           <button class="new" id="pReplace" title="Replace (this change)"><svg viewBox="0 0 52 52"><use href="#replaceIcon"/></svg><span class="tag">NEW</span></button>
+          <button class="new" id="pBin" title="Collect old node (this change)" hidden><svg viewBox="0 0 408.483 408.483"><use href="#binIcon"/></svg><span class="tag">NEW</span></button>
           <button class="more">More</button>
         </div>
       </div>
@@ -246,7 +248,7 @@ const TYPES = {
 const REASONS = ['Offline', 'Low battery', 'Physical damage', 'Theft / cannot find', 'Service issue', 'Other'];
 
 const $ = id => document.getElementById(id);
-const state = { type: 'NN SCD', other: '', nodeId: null, step: '1' };
+const state = { type: 'NN SCD', other: '', nodeId: null, step: '1', collected: false };
 
 function renderTypes() {} // Node Swap in this prototype covers NN SCD only.
 function applyType() {
@@ -318,7 +320,9 @@ function renderMap(step) {
   // Steps 3-1 / 3-2 show the outcome for the target node without changing the base data.
   const rm = $('refreshMode').checked;
   // Markers exist in Refresh Mode only; outside it every node draws as a plain NN SCD.
-  const view = NODES.map(n => !rm ? { ...n, marker: null } : n === t && step === '4-1' ? { ...n, marker: null } : n === t && step === '4-2' ? { ...n, marker: 'bin' } : n);
+  const view = NODES.map(n => !rm ? { ...n, marker: null }
+    : n === t && (step === '4-1' || (step === '5' && state.collected)) ? { ...n, marker: null }
+    : n === t && (step === '4-2' || step === '5') ? { ...n, marker: 'bin' } : n);
   const sorted = view.sort((a, b) => !!a.marker - !!b.marker); // marked nodes drawn last, on top
   $('mapSvg').innerHTML = base + sorted.map(markerSvg).join('');
 }
@@ -327,19 +331,23 @@ const HINT = {
   '2': 'Node details panel, as today. New: a replace action in the bottom-left actions, shown in Refresh Mode only. Tap it to open Node Swap.',
   '3': 'Refresh Node Swap screen for the tapped node. Fill it in and press the check button.',
   '4-1': 'Back on the map after the swap with Removed? checked: the marker is gone.',
-  '4-2': 'Back on the map after the swap with Removed? unchecked: the marker turns into a bin.',
+  '4-2': 'Back on the map after the swap with Removed? unchecked: the marker turns into a bin. Tap the bin node.',
+  '5': 'Node details for the bin node. No replace action this time, only the garbage action. Tap it to collect the old node and clear the marker.',
 };
 function showStep(step, node) {
   state.step = step;
   document.querySelectorAll('#steps button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.step === step)));
   const swap = step === '3';
+  if (step !== '5') state.collected = false;
   $('map').hidden = swap; $('cur').hidden = !swap;
-  $('panel').hidden = step !== '2';
+  $('panel').hidden = !(step === '2' || (step === '5' && !state.collected));
   $('hint').textContent = HINT[step];
-  $('legReplace').hidden = step !== '1'; $('legDone').hidden = step !== '4-1'; $('legBin').hidden = step !== '4-2'; $('qBin').hidden = step !== '4-2';
+  $('legReplace').hidden = step !== '1'; $('legDone').hidden = step !== '4-1'; $('legBin').hidden = !(step === '4-2' || step === '5'); $('qBin').hidden = step !== '4-2';
   if (node) { state.type = node.type; state.nodeId = node.id; renderTypes(); applyType(); }
   $('pId').textContent = target().id;
-  $('pReplace').hidden = !$('refreshMode').checked;
+  const rm = $('refreshMode').checked;
+  $('pReplace').hidden = !rm || step === '5';
+  $('pBin').hidden = !rm || step !== '5';
   if (!swap) renderMap(step);
 }
 $('refreshMode').onchange = () => {
@@ -355,12 +363,14 @@ $('steps').addEventListener('click', e => {
   showStep(s, s === '2' || s === '3' ? target() : null);
 });
 $('backMap').onclick = () => showStep('2');
-$('pClose').onclick = () => showStep('1');
+$('pClose').onclick = () => showStep(state.step === '5' ? '4-2' : '1');
 $('pReplace').onclick = () => showStep('3', target());
+$('pBin').onclick = () => { state.collected = true; showStep('5'); toast('Old node collected and discarded. Bin marker cleared.'); };
 $('panel').addEventListener('click', e => { const b = e.target.closest('button'); if (b && !b.id) toast(`${b.title || b.textContent}: as today, unchanged.`); });
 $('mapSvg').addEventListener('click', e => {
   const g = e.target.closest('.node'); if (!g) return;
   const n = NODES.find(x => x.id === g.dataset.id);
+  if (state.step === '4-2' && n === target()) { showStep('5'); return; }
   if (state.step !== '1') { toast('Go back to step 1 to start another swap.'); return; }
   if (!$('refreshMode').checked) { toast(`${n.id}: node details, no replace action outside Refresh Mode.`); state.nodeId = n.id; showStep('2'); return; }
   if (n.marker === 'replace') showStep('2', n);
