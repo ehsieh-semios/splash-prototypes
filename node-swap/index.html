@@ -98,7 +98,6 @@ input, select, textarea { font: inherit; color: inherit }
 .mk-bubble { width: 34px; height: 40px; flex: 0 0 auto }
 .mac { position: relative }
 .back { position: absolute; left: 8px; top: 2px; font-size: 18px; color: var(--muted); padding: 0 6px }
-.gone { font-size: 12px; font-weight: 400; color: #6b5600; background: #fff8d6; padding: 4px 8px; line-height: 1.35 }
 .legend { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin: -6px 0 0; max-width: 400px; text-align: left }
 .legend .swatch { width: 18px; height: 14px; background: #fff8d6; border: 1px solid var(--line); flex: 0 0 auto }
 .radios { display: flex; gap: 48px; font-size: 18px }
@@ -126,7 +125,7 @@ input, select, textarea { font: inherit; color: inherit }
 <div class="steps" role="group" aria-label="Flow" id="steps">
   <button data-step="1" aria-pressed="true">1 · Replace marker</button><span class="sep">&#8594;</span>
   <button data-step="2" aria-pressed="false">2 · Node details</button><span class="sep">&#8594;</span>
-  <button data-step="3" aria-pressed="false">3 · Node Swap</button><span class="sep">&#8594;</span>
+  <button data-step="3" aria-pressed="false">3 · Refresh Node Swap</button><span class="sep">&#8594;</span>
   <button data-step="4-1" aria-pressed="false">4-1 · Swapped, Removed? checked</button>
   <button data-step="4-2" aria-pressed="false">4-2 · Swapped, Removed? unchecked</button>
 </div>
@@ -192,7 +191,7 @@ input, select, textarea { font: inherit; color: inherit }
 <div class="phone" id="cur" hidden>
   <div class="scroll">
     <div class="mac"><button class="back" id="backMap" title="Back to map">&#8592;</button>Current Mac/Node Id: <span id="cMac"></span></div>
-    <div class="ttl"><h1>Node Swap</h1><b id="cNfc">Please Scan NFC</b><span class="gone" id="cRemovedNote" hidden>Removed in this change: "Please Scan NFC" and the QR button (not supported for NN SCD)</span></div>
+    <div class="ttl"><h1>Refresh Node Swap</h1><b id="cNfc" hidden>Please Scan NFC</b></div>
     <div class="icons">
       <button id="cQr" title="Scan QR"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm2 2v4h4V5zm8-2h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zm8-2h3v3h-3zm5 0h3v3h-3zm-5 5h3v3h-3zm5 0h3v3h-3zm-2.5-2.5h3v3h-3z"/></svg></button>
       <button id="cCam" title="Photo"><svg viewBox="0 0 24 24"><path d="M9 3l-1.5 2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.5L15 3zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
@@ -241,7 +240,6 @@ function applyType() {
   $('cMac').textContent = state.nodeId && state.type === 'NN SCD' ? state.nodeId : t.old;
   $('cNfc').hidden = !t.nfc;
   $('cQr').hidden = !t.qr;
-  $('cRemovedNote').hidden = state.type !== 'NN SCD';
   $('cIdLabel').textContent = t.idLabel;
   $('cId').placeholder = t.newId; $('cId').value = ''; $('cId').readOnly = !t.editable;
   $('cVoucherRow').hidden = !t.voucher;
@@ -312,7 +310,7 @@ function renderMap(step) {
 const HINT = {
   '1': 'Map with the property\'s NN SCDs. Nodes carrying the replace marker are flagged for swap. Tap one.',
   '2': 'Node details panel, as today. New: a replace action in the bottom-left actions, shown in Refresh Mode only. Tap it to open Node Swap.',
-  '3': 'Node Swap screen for the tapped node. Fill it in and press the check button.',
+  '3': 'Refresh Node Swap screen for the tapped node. Fill it in and press the check button.',
   '4-1': 'Back on the map after the swap with Removed? checked: the marker is gone.',
   '4-2': 'Back on the map after the swap with Removed? unchecked: the marker turns into a bin.',
 };
