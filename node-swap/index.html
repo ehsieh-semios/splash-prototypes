@@ -181,6 +181,10 @@ input, select, textarea { font: inherit; color: inherit }
     <svg class="mk-bubble" viewBox="-20 -42 40 48" aria-hidden="true"><path d="M-13,-38 h26 a4,4 0 0 1 4,4 v18 a4,4 0 0 1 -4,4 h-8 l-5,6 l-5,-6 h-8 a4,4 0 0 1 -4,-4 v-18 a4,4 0 0 1 4,-4 z" fill="#fff" stroke="#1d1f1b" stroke-width="1"/><g transform="translate(-7,-33) scale(0.0343)"><use href="#binIcon" fill="#1d1f1b"/></g><circle cy="0" r="3" fill="#FF9900"/></svg>
     <div><b>After swap, Removed? unchecked</b>: bin marker. The old node is still in the field and needs to be collected.</div>
   </div>
+  <div class="question" id="qCollect" hidden>
+    <b>Open question</b>
+    <p>What does the "collect old node" screen look like after tapping the garbage action? A confirm dialog only, a short form (photo, note, date collected), or a dedicated screen like Refresh Node Swap? And which record does it write (removal log on the old node id)?</p>
+  </div>
   <div class="question" id="qBin" hidden>
     <b>Open question</b>
     <p>We need a new action to clear the bin marker: find the device that was not removed last time and discard it. Where does this action live (node details, long press on the marker, a "Collect" button in Refresh Mode), and what does it write back (clear the removal flag, log a removal, both)?</p>
@@ -342,7 +346,7 @@ function showStep(step, node) {
   $('map').hidden = swap; $('cur').hidden = !swap;
   $('panel').hidden = !(step === '2' || (step === '5' && !state.collected));
   $('hint').textContent = HINT[step];
-  $('legReplace').hidden = step !== '1'; $('legDone').hidden = step !== '4-1'; $('legBin').hidden = !(step === '4-2' || step === '5'); $('qBin').hidden = step !== '4-2';
+  $('legReplace').hidden = step !== '1'; $('legDone').hidden = step !== '4-1'; $('legBin').hidden = !(step === '4-2' || step === '5'); $('qBin').hidden = step !== '4-2'; $('qCollect').hidden = step !== '5';
   if (node) { state.type = node.type; state.nodeId = node.id; renderTypes(); applyType(); }
   $('pId').textContent = target().id;
   const rm = $('refreshMode').checked;
