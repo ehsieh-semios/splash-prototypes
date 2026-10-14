@@ -361,6 +361,8 @@ $('refreshMode').onchange = () => {
 
 $('cReason').innerHTML = '<option value="">&lt;Select Reason&gt;</option>' + REASONS.map(r => `<option>${r}</option>`).join('');
 renderTypes(); applyType(); showStep('1');
+// ?step=N opens a given step directly (used to render static snapshots for Figma).
+{ const s = new URLSearchParams(location.search).get('step'); if (s && HINT[s]) { if (s === '5') state.nodeId = NODES[3].id; showStep(s, s === '2' || s === '3' ? target() : null); } }
 $('steps').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const s = b.dataset.step;
