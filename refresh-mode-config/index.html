@@ -92,6 +92,9 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 0 }
 .metric .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pending) }
 .metric .dot.done { background: var(--done) }
 .metric .lbl { color: var(--muted) }
+.metric .more { margin-left: auto; width: 32px; height: 28px; display: grid; place-items: center; border-radius: 4px; color: var(--accent) }
+.metric .more:hover { background: var(--line) }
+.metric .more svg { width: 18px; height: 18px; fill: currentColor }
 .empty { color: var(--muted); font-size: 13px; padding: 12px 8px; text-align: center }
 
 .actions { display: flex; justify-content: flex-end; gap: 8px; padding: 8px }
@@ -142,7 +145,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 0 }
     <hr>
   </div>
 
-  <div class="ph"><h2>Refresh Mode</h2><span>Scroll · tap a count for details</span></div>
+  <div class="ph"><h2>Refresh Mode</h2><span>Scroll · tap a count or the list button for the nodes</span></div>
   <div class="list" id="list"></div>
 
   <div class="actions">
@@ -253,10 +256,10 @@ function renderProgress() {
     if (!total) return '';
     const done = p.metrics.filter(m => m.status === 'done').reduce((a, m) => a + m.items.filter(n => mg.includes(n.mg)).length, 0);
     const pct = Math.round(done / total * 100);
-    return `<div class="prow">
+    return `<div class="prow" data-type="${p.type}">
       <div class="prow-h">${marker(p.type)}<span class="name">${p.type}</span><div class="bar"><i style="width:${pct}%"></i></div><span class="pct">${pct}%</span></div>
       ${p.metrics.map((m, mi) => { const n = m.items.filter(x => mg.includes(x.mg)).length; return `
-      <div class="metric"><span class="dot ${m.status}"></span><button class="cnt" data-status="${m.status}" data-type="${p.type}" data-mi="${mi}">${n}/${total}</button><span class="lbl">${m.label}</span></div>`; }).join('')}
+      <div class="metric"><span class="dot ${m.status}"></span><button class="cnt" data-status="${m.status}" data-type="${p.type}" data-mi="${mi}">${n}/${total}</button><span class="lbl">${m.label}</span><button class="more" data-type="${p.type}" data-mi="${mi}" title="Show the node list"><svg viewBox="0 0 24 24"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h12v2H3z"/></svg></button></div>`; }).join('')}
     </div>`;
   }).join('');
   $('list').innerHTML = rows || '<div class="empty">No nodes match the selected management types.</div>';
@@ -288,7 +291,8 @@ renderConfig(); renderProgress();
 try { setVariant(localStorage.getItem('rmc-variant') === 'B'); } catch (e) { setVariant(false); }
 // ?variant=A|B&open=<card index> opens a given state directly (used to render static snapshots).
 { const q = new URLSearchParams(location.search); if (q.get('variant')) setVariant(q.get('variant') === 'B');
-  const o = q.get('open'); if (o !== null && $(`card-${o}`)) { $('cfgA').querySelectorAll('details[open]').forEach(d => d.open = false); $(`card-${o}`).open = true; $(`page-${o}`).scrollIntoView({ block: 'nearest', inline: 'start' }); } }
+  const o = q.get('open'); if (o !== null && $(`card-${o}`)) { $('cfgA').querySelectorAll('details[open]').forEach(d => d.open = false); $(`card-${o}`).open = true; $(`page-${o}`).scrollIntoView({ block: 'nearest', inline: 'start' });
+    const row = document.querySelector(`.prow[data-type="${CSS.escape(CONFIG[o].type)}"]`); if (row) $('list').scrollTop = row.offsetTop - $('list').offsetTop; } }
 
 $('btnA').onclick = () => setVariant(false);
 $('btnB').onclick = () => setVariant(true);
@@ -308,7 +312,7 @@ $('pager').addEventListener('scroll', () => {
   document.querySelectorAll('#tabs button').forEach((b, j) => b.setAttribute('aria-selected', String(j === i)));
   document.querySelectorAll('#dots i').forEach((d, j) => d.classList.toggle('on', j === i));
 }, { passive: true });
-$('list').addEventListener('click', e => { const b = e.target.closest('.cnt'); if (b) openSheet(b.dataset.type, +b.dataset.mi); });
+$('list').addEventListener('click', e => { const b = e.target.closest('.cnt, .more'); if (b) openSheet(b.dataset.type, +b.dataset.mi); });
 $('sheetHost').addEventListener('click', e => { if (e.target.id === 'scrim' || e.target.id === 'shClose') closeSheet(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
 $('btnOk').onclick = () => toast(`Saved · ${selectedMg().join(', ') || 'no management type'} · ${CONFIG.map(c => c.type + ' ' + summary(c)).join(' / ')}`);
