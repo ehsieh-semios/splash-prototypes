@@ -57,6 +57,8 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 0 }
 .setting .lbl { color: var(--muted) }
 .setting select { font: inherit; color: var(--fg); background: var(--row); border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px }
 .setting .static { font-variant-numeric: tabular-nums }
+.setting .days { display: inline-flex; align-items: center; gap: 6px; color: var(--muted) }
+.setting .days input { font: inherit; color: var(--fg); background: var(--row); border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px; width: 64px; text-align: right }
 
 /* Type config, version B: tabs + pager */
 .tabs { display: flex; gap: 0; padding: 0 12px; overflow-x: auto; scrollbar-width: none }
@@ -184,14 +186,14 @@ const DAYS = ['1 day','2 days','3 days','5 days','7 days'];
 const CONFIG = [
   { type:'SCD',    settings:[ ['Battery level','≤ 2.7 V'], ['CAN swap time', WEEKS, '2 weeks'], ['Last reported', DAYS, '3 days'] ] },
   { type:'LN SCD', settings:[ ['Battery level','≤ 2.7 V'], ['CAN swap time', WEEKS, '2 weeks'], ['Last reported', DAYS, '3 days'] ] },
-  { type:'NN SCD', settings:[ ['Last installed', ['90 days','180 days','365 days'], '180 days'] ] },
+  { type:'NN SCD', settings:[ ['Refresh window', 'days', '180'] ] }, // free number of days, default 180
   { type:'TRP',    settings:[ ['Battery level','≤ 2.7 V'], ['Last reported', DAYS, '3 days'] ] },
   { type:'DN TRP', settings:[ ['Battery level','≤ 2.7 V'], ['Last reported', DAYS, '3 days'] ] },
   { type:'RPT',    settings:[ ['Last reported', DAYS, '1 day'] ] },
 ];
 const state = { values: {} };
-CONFIG.forEach(c => c.settings.forEach(s => { if (Array.isArray(s[1])) state.values[c.type + '|' + s[0]] = s[2]; }));
-const summary = c => c.settings.map(s => Array.isArray(s[1]) ? state.values[c.type + '|' + s[0]].replace(/ days?/,' d').replace(/ weeks?/,' w') : s[1]).join(' · ');
+CONFIG.forEach(c => c.settings.forEach(s => { if (Array.isArray(s[1]) || s[1] === 'days') state.values[c.type + '|' + s[0]] = s[2]; }));
+const summary = c => c.settings.map(s => s[1] === 'days' ? state.values[c.type + '|' + s[0]] + ' d' : Array.isArray(s[1]) ? state.values[c.type + '|' + s[0]].replace(/ days?/,' d').replace(/ weeks?/,' w') : s[1]).join(' · ');
 
 // Site progress. Each metric lists the nodes behind the count, keyed by management type,
 // so the Management type checkboxes filter counts. Example data only.
@@ -210,7 +212,7 @@ const PROGRESS = [
       { label:'CAN swap due', status:'pending', items: nodes('LN',3,['Commercial','Research']) },
       { label:'Not reported', status:'pending', items: nodes('LN',1,['Research']) } ] },
   { type:'NN SCD', total: nodes('NN', 18, ['Commercial','Research']), metrics:[
-      { label:'Last installed', status:'pending', items: nodes('NN',4,['Commercial','Research']) } ] },
+      { label:'Refresh due', status:'pending', items: nodes('NN',4,['Commercial','Research']) } ] },
   { type:'TRP',    total: nodes('TRP', 25, ['Commercial','Research']), metrics:[
       { label:'Refreshed', status:'done', items: nodes('TRP',24,['Commercial','Research']) },
       { label:'Low battery', status:'pending', items: nodes('TRP',2,['Commercial']) } ] },
@@ -225,6 +227,9 @@ const selectedMg = () => [...document.querySelectorAll('#mgmt input:checked')].m
 
 function settingRow(type, s) {
   const [label, opts, def] = s;
+  const key0 = type + '|' + label;
+  // Free number of days (NN SCD refresh window): typed in, not picked from a list.
+  if (opts === 'days') return `<div class="setting"><label class="lbl" for="${key0}">${label}</label><span class="days"><input type="number" inputmode="numeric" min="1" max="999" id="${key0}" data-key="${key0}" value="${state.values[key0]}"> days</span></div>`;
   if (!Array.isArray(opts)) return `<div class="setting"><span class="lbl">${label}</span><span class="static">${opts}</span></div>`;
   const key = type + '|' + label;
   return `<div class="setting"><label class="lbl" for="${key}">${label}</label><select id="${key}" data-key="${key}">${opts.map(o => `<option${o === state.values[key] ? ' selected' : ''}>${o}</option>`).join('')}</select></div>`;
@@ -281,6 +286,9 @@ function setVariant(b) {
 
 renderConfig(); renderProgress();
 try { setVariant(localStorage.getItem('rmc-variant') === 'B'); } catch (e) { setVariant(false); }
+// ?variant=A|B&open=<card index> opens a given state directly (used to render static snapshots).
+{ const q = new URLSearchParams(location.search); if (q.get('variant')) setVariant(q.get('variant') === 'B');
+  const o = q.get('open'); if (o !== null && $(`card-${o}`)) { $('cfgA').querySelectorAll('details[open]').forEach(d => d.open = false); $(`card-${o}`).open = true; $(`page-${o}`).scrollIntoView({ block: 'nearest', inline: 'start' }); } }
 
 $('btnA').onclick = () => setVariant(false);
 $('btnB').onclick = () => setVariant(true);
@@ -288,7 +296,7 @@ $('mgmt').addEventListener('change', renderProgress);
 document.addEventListener('change', e => {
   const key = e.target.dataset && e.target.dataset.key; if (!key) return;
   state.values[key] = e.target.value;
-  document.querySelectorAll(`select[data-key="${CSS.escape(key)}"]`).forEach(s => { if (s !== e.target) s.value = e.target.value; });
+  document.querySelectorAll(`[data-key="${CSS.escape(key)}"]`).forEach(s => { if (s !== e.target) s.value = e.target.value; });
   const i = CONFIG.findIndex(c => key.startsWith(c.type + '|'));
   document.querySelector(`#card-${i} .sum`).textContent = summary(CONFIG[i]);
 });

@@ -130,20 +130,20 @@ input, select, textarea { font: inherit; color: inherit }
 </style>
 
 <div class="steps" role="group" aria-label="Flow" id="steps">
-  <button data-step="1" aria-pressed="true">1 · Replace marker</button><span class="sep">&#8594;</span>
+  <button data-step="1" aria-pressed="true">1 · Refresh icon</button><span class="sep">&#8594;</span>
   <button data-step="2" aria-pressed="false">2 · Node details</button><span class="sep">&#8594;</span>
   <button data-step="3" aria-pressed="false">3 · Refresh Node Swap</button><span class="sep">&#8594;</span>
   <button data-step="4-1" aria-pressed="false">4-1 · Swapped, Removed? checked</button>
   <button data-step="4-2" aria-pressed="false">4-2 · Swapped, Removed? unchecked</button><span class="sep">&#8594;</span>
-  <button data-step="5" aria-pressed="false">5 · Collect old node</button>
+  <button data-step="5" aria-pressed="false">5 · Garbage action</button>
 </div>
-<p class="hint" id="hint">Map with the property's nodes. Nodes carrying the replace marker are flagged for swap. Tap one to open Node Swap.</p>
+<p class="hint" id="hint">Map with the property's nodes. Nodes carrying the Refresh icon are due for refresh. Tap one to open Refresh Node Swap.</p>
 <p class="legend"><span class="swatch"></span><b>Highlighted = this change.</b> Everything else is the screen as it is today.</p>
 
 <div class="phone" id="map">
   <div class="modebar">
     <label class="mode"><input type="checkbox" id="refreshMode" checked><span>Refresh Mode</span></label>
-    <span class="modenote">Replace marker and replace action appear in Refresh Mode only. Toggle to compare.</span>
+    <span class="modenote">Refresh icon and Refresh action appear in Refresh Mode only. Toggle to compare.</span>
   </div>
   <div class="mapwrap"><svg id="mapSvg" viewBox="0 0 400 600" role="img" aria-label="Map of nodes"></svg>
     <div class="panel" id="panel" hidden role="dialog" aria-label="Node details">
@@ -153,8 +153,8 @@ input, select, textarea { font: inherit; color: inherit }
         <button class="help">HELP &amp; SUPPORT</button>
         <div class="acts">
           <button title="Copy"><svg viewBox="0 0 24 24"><path d="M8 7V3h13v13h-4M3 8h13v13H3z" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
-          <button class="new" id="pReplace" title="Replace (this change)"><svg viewBox="0 0 52 52"><use href="#replaceIcon"/></svg><span class="tag">NEW</span></button>
-          <button class="new" id="pBin" title="Collect old node (this change)" hidden><svg viewBox="0 0 408.483 408.483"><use href="#binIcon"/></svg><span class="tag">NEW</span></button>
+          <button class="new" id="pReplace" title="Refresh (this change)"><svg viewBox="0 0 52 52"><use href="#replaceIcon"/></svg><span class="tag">NEW</span></button>
+          <button class="new" id="pBin" title="Garbage (this change)" hidden><svg viewBox="0 0 408.483 408.483"><use href="#binIcon"/></svg><span class="tag">NEW</span></button>
           <button title="Swap"><svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           <button title="Service"><svg viewBox="0 0 24 24"><path d="M3 8h18v12H3zM9 8V5h6v3M12 11v6M9 14h6" fill="none" stroke="currentColor" stroke-width="2.2"/></svg></button>
           <button title="Battery swap"><svg viewBox="0 0 24 24"><path d="M2 8h7v12H2zM15 8h7v12h-7zM4 6h3M17 6h3M9 14h6l-2-2M9 14l2 2" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
@@ -171,23 +171,23 @@ input, select, textarea { font: inherit; color: inherit }
   </div>
   <div class="maplegend new" id="legReplace">
     <svg class="mk-bubble" viewBox="-20 -42 40 48" aria-hidden="true"><path d="M-13,-38 h26 a4,4 0 0 1 4,4 v18 a4,4 0 0 1 -4,4 h-8 l-5,6 l-5,-6 h-8 a4,4 0 0 1 -4,-4 v-18 a4,4 0 0 1 4,-4 z" fill="#fff" stroke="#1d1f1b" stroke-width="1"/><g transform="translate(-8,-33) scale(0.3077)"><use href="#replaceIcon" fill="#1d1f1b"/></g><circle cy="0" r="3" fill="#FF9900"/></svg>
-    <div><b>Replace marker</b> (this change, Refresh Mode only): node flagged for swap. Tap it to open node details. Other nodes open node details as today.</div>
+    <div><b>Refresh icon</b> (this change, Refresh Mode only): node due for refresh. Tap it to open node details. Other nodes open node details as today.</div>
   </div>
   <div class="maplegend new" id="legDone" hidden>
     <svg class="mk-bubble" viewBox="-20 -42 40 48" aria-hidden="true"><circle cy="-12" r="9" fill="#00CC00" opacity=".55"/><circle cy="-12" r="5" fill="#FF9900"/></svg>
-    <div><b>After swap, Removed? checked</b>: the old node left the field. Marker cleared, node shown as a normal NN SCD.</div>
+    <div><b>After swap, Removed? checked</b>: the old node left the field. Icon cleared, node shown as a normal NN SCD.</div>
   </div>
   <div class="maplegend new" id="legBin" hidden>
     <svg class="mk-bubble" viewBox="-20 -42 40 48" aria-hidden="true"><path d="M-13,-38 h26 a4,4 0 0 1 4,4 v18 a4,4 0 0 1 -4,4 h-8 l-5,6 l-5,-6 h-8 a4,4 0 0 1 -4,-4 v-18 a4,4 0 0 1 4,-4 z" fill="#fff" stroke="#1d1f1b" stroke-width="1"/><g transform="translate(-7,-33) scale(0.0343)"><use href="#binIcon" fill="#1d1f1b"/></g><circle cy="0" r="3" fill="#FF9900"/></svg>
-    <div><b>After swap, Removed? unchecked</b>: bin marker. The old node is still in the field and needs to be collected.</div>
+    <div><b>After swap, Removed? unchecked</b>: Garbage icon. The old node is still in the field and needs to be discarded.</div>
   </div>
   <div class="question" id="qCollect" hidden>
     <b>Open question</b>
-    <p>What does the "collect old node" screen look like after tapping the garbage action? A confirm dialog only, a short form (photo, note, date collected), or a dedicated screen like Refresh Node Swap? And which record does it write (removal log on the old node id)?</p>
+    <p>What does the Garbage action open? A confirm dialog only, a short form (photo, note, date discarded), or a dedicated screen like Refresh Node Swap? Backend: which endpoint writes the missing EQUIP_SWAP_OUT for the old node id?</p>
   </div>
   <div class="question" id="qBin" hidden>
     <b>Open question</b>
-    <p>We need a new action to clear the bin marker: find the device that was not removed last time and discard it. Where does this action live (node details, long press on the marker, a "Collect" button in Refresh Mode), and what does it write back (clear the removal flag, log a removal, both)?</p>
+    <p>The Garbage icon stays until the old node is discarded through the Garbage action in node details (Refresh Mode only). The app reads it from node history: an EQUIP_SWAP_IN with no EQUIP_SWAP_OUT at the same stamp.</p>
   </div>
 </div>
 
@@ -307,7 +307,7 @@ const ICON = {
   replace: `<g transform="translate(-8,-33) scale(${16 / 52})"><use href="#replaceIcon" fill="#1d1f1b"/></g>`,
   bin:     `<g transform="translate(-7,-33) scale(${14 / 408.483})"><use href="#binIcon" fill="#1d1f1b"/></g>`,
 };
-const LABEL = { replace: ', flagged for swap', bin: ', old node still to be collected' };
+const LABEL = { replace: ', due for refresh', bin: ', old node still to be discarded' };
 function markerSvg(n) {
   const [shape, color] = MARK[n.type], s = SHAPE[shape], k = 20 / s.vb;
   // Marker sits in a callout bubble whose tail is anchored on the node.
@@ -332,12 +332,12 @@ function renderMap(step) {
   $('mapSvg').innerHTML = base + sorted.map(markerSvg).join('');
 }
 const HINT = {
-  '1': 'Map with the property\'s NN SCDs. Nodes carrying the replace marker are flagged for swap. Tap one.',
-  '2': 'Node details panel, as today. New: a replace action, second in the actions list, shown in Refresh Mode only. Tap it to open Node Swap.',
+  '1': 'Map with the property\'s NN SCDs. Nodes carrying the Refresh icon are due for refresh. Tap one.',
+  '2': 'Node details panel, as today. New: the Refresh action, second in the actions list, shown in Refresh Mode only. Tap it to open Refresh Node Swap.',
   '3': 'Refresh Node Swap screen for the tapped node. Fill it in and press the check button.',
-  '4-1': 'Back on the map after the swap with Removed? checked: the marker is gone.',
-  '4-2': 'Back on the map after the swap with Removed? unchecked: the marker turns into a bin. Tap the bin node.',
-  '5': 'Node details for the bin node. No replace action this time, only the garbage action. Tap it to collect the old node and clear the marker.',
+  '4-1': 'Back on the map after the swap with Removed? checked: the icon is gone.',
+  '4-2': 'Back on the map after the swap with Removed? unchecked: the node shows the Garbage icon. Tap it.',
+  '5': 'Node details for the node with the Garbage icon. No Refresh action this time, only the Garbage action. Tap it to discard the old node and clear the icon.',
 };
 function showStep(step, node) {
   state.step = step;
@@ -357,7 +357,7 @@ function showStep(step, node) {
 }
 $('refreshMode').onchange = () => {
   showStep(state.step === '3' ? '2' : state.step);
-  toast($('refreshMode').checked ? 'Refresh Mode on: replace marker and action shown.' : 'Refresh Mode off: no replace marker, no replace action.');
+  toast($('refreshMode').checked ? 'Refresh Mode on: Refresh icon and action shown.' : 'Refresh Mode off: no Refresh icon, no Refresh action.');
 };
 
 $('cReason').innerHTML = '<option value="">&lt;Select Reason&gt;</option>' + REASONS.map(r => `<option>${r}</option>`).join('');
@@ -372,16 +372,16 @@ $('steps').addEventListener('click', e => {
 $('backMap').onclick = () => showStep('2');
 $('pClose').onclick = () => showStep(state.step === '5' ? '4-2' : '1');
 $('pReplace').onclick = () => showStep('3', target());
-$('pBin').onclick = () => { state.collected = true; showStep('5'); toast('Old node collected and discarded. Bin marker cleared.'); };
+$('pBin').onclick = () => { state.collected = true; showStep('5'); toast('Old node discarded. Garbage icon cleared.'); };
 $('panel').addEventListener('click', e => { const b = e.target.closest('button'); if (b && !b.id) toast(`${b.title || b.textContent}: as today, unchanged.`); });
 $('mapSvg').addEventListener('click', e => {
   const g = e.target.closest('.node'); if (!g) return;
   const n = NODES.find(x => x.id === g.dataset.id);
   if (state.step === '4-2' && n === target()) { showStep('5'); return; }
   if (state.step !== '1') { toast('Go back to step 1 to start another swap.'); return; }
-  if (!$('refreshMode').checked) { toast(`${n.id}: node details, no replace action outside Refresh Mode.`); state.nodeId = n.id; showStep('2'); return; }
+  if (!$('refreshMode').checked) { toast(`${n.id}: node details, no Refresh action outside Refresh Mode.`); state.nodeId = n.id; showStep('2'); return; }
   if (n.marker === 'replace') showStep('2', n);
-  else if (n.marker === 'bin') toast(`${n.id}: swapped, old node still in the field. Collect it to clear the marker.`);
+  else if (n.marker === 'bin') toast(`${n.id}: swapped, old node still in the field. Discard it to clear the icon.`);
   else toast(`${n.type} ${n.id}: opens node details, unchanged.`);
 });
 $('mapSvg').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.target.closest('.node')?.dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
@@ -403,7 +403,7 @@ $('cOk').onclick = () => {
     const checked = $('cRemoved').checked;
     state.lastInsert = $('cInsert').value; state.lastDelay = $('cDelay').value; // sticky for the next swap
     showStep(checked ? '4-1' : '4-2');
-    toast(checked ? 'Node swapped. Old node removed, marker cleared.' : 'Node swapped. Old node not removed: bin marker shown.');
+    toast(checked ? 'Node swapped. Old node removed, icon cleared.' : 'Node swapped. Old node not removed: Garbage icon shown.');
     return;
   }
   toast('Node swapped.');
