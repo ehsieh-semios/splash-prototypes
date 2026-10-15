@@ -4,14 +4,104 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>Splash prototypes</title>
-<style>body{margin:0;padding:32px 16px;font:16px/1.5 system-ui;background:#e9ebe6;color:#1d1f1b}main{max-width:480px;margin:0 auto}h1{font-size:22px;font-weight:500}a{display:block;background:#fff;border-radius:8px;padding:14px 16px;margin:12px 0;color:#2e7d4f;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.08)}a small{display:block;color:#6b6f68;margin-top:2px}</style>
+<title>Refresh Node Swap flow</title>
+<style>
+body{margin:0;background:#e9ebe6;color:#1d1f1b;font:14px/1.4 system-ui,sans-serif}
+header{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:12px 16px}
+header b{font-weight:600}
+button{font:inherit;border:1px solid #b9bdb4;background:#fff;border-radius:6px;padding:4px 10px;cursor:pointer}
+#wrap{display:flex;justify-content:center;padding:0 16px 32px}
+.stage{position:relative;flex:none}
+.stage>img{display:block}
+.layer{position:absolute}
+.hot{position:absolute;cursor:pointer}
+.flash .hot{background:rgba(24,119,242,.25);outline:2px solid rgba(24,119,242,.7)}
+.scroll{position:absolute;overflow:auto;scrollbar-width:none;background:#fff}
+.scroll::-webkit-scrollbar{display:none}
+.scroll>.content{position:relative}
+.scroll img{display:block}
+#dim{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:5}
+#dim.on{display:flex}
+.unchecked{position:absolute;background:#fff;border:2px solid #6b6f68;border-radius:2px;box-sizing:border-box;pointer-events:none}
+</style>
 </head>
-<body><main>
-<h1>Splash prototypes</h1>
-<a href="node-swap/">Node Swap<small>Map with replace marker, NN SCD swap, Removed? checkbox, bin marker</small></a>
-<a href="refresh-mode-config/">Refresh Mode Config<small>Proposed A / B layouts, management type filter, site progress</small></a>
-</main></body>
+<body>
+<header><b id="title"></b><button id="restart">Restart</button><span>Click anywhere to show the hotspots.</span></header>
+<div id="wrap"></div>
+<div id="dim"></div>
+<script>
+const D = {"F": {"62:2": ["0 · Refresh Mode Config (A)", 432, 817, -8, 0, 448, 833], "63:2": ["0b · Refresh Mode Config (B)", 432, 817, -8, 0, 448, 833], "103:2": ["0c · Refresh Site Progress", 432, 817, 0, 0, 432, 817], "85:2": ["1 · Refresh icon", 432, 764, -8, 0, 448, 780], "86:2": ["2 · Node details", 432, 709, -8, 0, 448, 725], "58:2": ["3 · Refresh Node Swap", 432, 817, -8, 0, 448, 833], "87:2": ["4-1 · Swapped, Removed? checked", 432, 741, -8, 0, 448, 757], "88:2": ["4-2 · Swapped, Removed? unchecked", 432, 864, -8, 0, 448, 880], "89:2": ["5 · Garbage action", 432, 878, -8, 0, 448, 894], "72:6": ["Export sheet", 360, 179, -24, -16, 408, 227], "97:2": ["Node list", 432, 557, -8, 0, 448, 596]}, "S": {"62:35": ["62:2", 16, 168, 400, 304, "v", "s62_35", 400, 382, 0], "62:130": ["62:2", 16, 515, 400, 234, "v", "s62_130", 400, 436, 0], "63:50": ["63:2", 16, 208, 400, 190, "h", "s63_50", 2240, 190, -20], "63:205": ["63:2", 16, 464, 400, 285, "v", "s63_205", 400, 436, 0], "103:60": ["103:2", 16, 375, 400, 370, "v", "s103_60", 400, 1001, 0]}, "H": [{"f": "58:2", "n": "58:12", "x": 24, "y": 81, "w": 30, "h": 21, "a": {"go": "86:2"}, "s": null}, {"f": "58:2", "n": "58:25", "x": 220, "y": 173, "w": 194, "h": 56, "a": {"ifRemoved": ["87:2", "88:2"]}, "s": null}, {"f": "58:2", "n": "58:49", "x": 136, "y": 359, "w": 264, "h": 22, "a": {"toggleRemoved": 1}, "s": null}, {"f": "62:2", "n": "72:2", "x": 163, "y": 757, "w": 88, "h": 36, "a": {"overlay": "72:6"}, "s": null}, {"f": "62:2", "n": "62:254", "x": 259, "y": 757, "w": 89, "h": 36, "a": {"go": "85:2"}, "s": null}, {"f": "62:2", "n": "62:257", "x": 356, "y": 757, "w": 52, "h": 36, "a": {"go": "85:2"}, "s": null}, {"f": "62:2", "n": "73:5", "x": 329, "y": 63, "w": 63, "h": 22, "a": {"go": "63:2"}, "s": null}, {"f": "63:2", "n": "72:4", "x": 163, "y": 757, "w": 88, "h": 36, "a": {"overlay": "72:6"}, "s": null}, {"f": "63:2", "n": "63:330", "x": 259, "y": 757, "w": 89, "h": 36, "a": {"go": "85:2"}, "s": null}, {"f": "63:2", "n": "63:333", "x": 356, "y": 757, "w": 52, "h": 36, "a": {"go": "85:2"}, "s": null}, {"f": "63:2", "n": "73:9", "x": 258, "y": 63, "w": 69, "h": 22, "a": {"go": "62:2"}, "s": null}, {"f": "72:6", "n": "72:10", "x": 163, "y": 123, "w": 89, "h": 36, "a": {"close": 1}, "s": null}, {"f": "72:6", "n": "72:12", "x": 260, "y": 123, "w": 80, "h": 36, "a": {"close": 1}, "s": null}, {"f": "85:2", "n": "85:29", "x": 109, "y": 191, "w": 34, "h": 50, "a": {"go": "86:2"}, "s": null}, {"f": "85:2", "n": "85:42", "x": 26, "y": 635, "w": 48, "h": 36, "a": {"go": "62:2"}, "s": null}, {"f": "85:2", "n": "85:46", "x": 82, "y": 635, "w": 48, "h": 36, "a": {"go": "103:2"}, "s": null}, {"f": "86:2", "n": "86:42", "x": 26, "y": 649, "w": 48, "h": 36, "a": {"go": "62:2"}, "s": null}, {"f": "86:2", "n": "86:46", "x": 82, "y": 649, "w": 48, "h": 36, "a": {"go": "103:2"}, "s": null}, {"f": "86:2", "n": "86:72", "x": 72, "y": 459, "w": 38, "h": 40, "a": {"go": "58:2", "resetRemoved": 1}, "s": null}, {"f": "86:2", "n": "86:149", "x": 383, "y": 323, "w": 27, "h": 32, "a": {"go": "85:2"}, "s": null}, {"f": "87:2", "n": "87:30", "x": 26, "y": 621, "w": 48, "h": 36, "a": {"go": "62:2"}, "s": null}, {"f": "87:2", "n": "87:34", "x": 82, "y": 621, "w": 48, "h": 36, "a": {"go": "103:2"}, "s": null}, {"f": "87:2", "n": "87:11", "x": 16, "y": 65, "w": 400, "h": 600, "a": {"go": "85:2"}, "s": null}, {"f": "88:2", "n": "88:27", "x": 109, "y": 191, "w": 34, "h": 50, "a": {"go": "89:2"}, "s": null}, {"f": "88:2", "n": "88:38", "x": 26, "y": 635, "w": 48, "h": 36, "a": {"go": "62:2"}, "s": null}, {"f": "88:2", "n": "88:42", "x": 82, "y": 635, "w": 48, "h": 36, "a": {"go": "103:2"}, "s": null}, {"f": "89:2", "n": "89:38", "x": 26, "y": 649, "w": 48, "h": 36, "a": {"go": "62:2"}, "s": null}, {"f": "89:2", "n": "89:42", "x": 82, "y": 649, "w": 48, "h": 36, "a": {"go": "103:2"}, "s": null}, {"f": "89:2", "n": "89:68", "x": 72, "y": 459, "w": 38, "h": 40, "a": {"go": "87:2"}, "s": null}, {"f": "89:2", "n": "89:141", "x": 383, "y": 323, "w": 27, "h": 32, "a": {"go": "88:2"}, "s": null}, {"f": "97:2", "n": "97:34", "x": 332, "y": 518, "w": 60, "h": 32, "a": {"close": 1}, "s": null}, {"f": "103:2", "n": "103:354", "x": 178, "y": 756, "w": 57, "h": 31, "a": {"go": "85:2"}, "s": null}, {"f": "103:2", "n": "103:357", "x": 263, "y": 756, "w": 133, "h": 31, "a": {"overlay": "72:6"}, "s": null}, {"f": "103:2", "n": "103:83", "x": 359, "y": 428, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:107", "x": 359, "y": 518, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:131", "x": 359, "y": 608, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:143", "x": 359, "y": 642, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:155", "x": 359, "y": 676, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:167", "x": 359, "y": 710, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:191", "x": 359, "y": 800, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:203", "x": 359, "y": 834, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:215", "x": 359, "y": 868, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:227", "x": 359, "y": 902, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:251", "x": 359, "y": 992, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:275", "x": 359, "y": 1082, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:287", "x": 359, "y": 1116, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:311", "x": 359, "y": 1206, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:323", "x": 359, "y": 1240, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}, {"f": "103:2", "n": "103:347", "x": 359, "y": 1330, "w": 32, "h": 28, "a": {"overlay": "97:2"}, "s": "103:60"}]};
+let removed = true;
+const wrap = document.getElementById('wrap'), dim = document.getElementById('dim');
+const img = id => 'img/' + id.replace(':', '_') + '.png';
+
+function stage(id) {
+  const [name, w, h, dx, dy, rw, rh] = D.F[id];
+  const st = document.createElement('div'); st.className = 'stage';
+  st.style.width = rw + 'px'; st.style.height = rh + 'px';
+  st.innerHTML = `<img src="${img(id)}" width="${rw}" height="${rh}" alt="${name}">`;
+  const layer = document.createElement('div'); layer.className = 'layer';
+  Object.assign(layer.style, {left: -dx + 'px', top: -dy + 'px', width: w + 'px', height: h + 'px'});
+  st.appendChild(layer);
+  const scrolls = {};
+  for (const [sid, s] of Object.entries(D.S)) {
+    if (s[0] !== id) continue;
+    const [, x, y, sw, sh, dir, cimg, cw, ch, cdx] = s;
+    const el = document.createElement('div'); el.className = 'scroll';
+    Object.assign(el.style, {left: x + 'px', top: y + 'px', width: sw + 'px', height: sh + 'px', overflowX: dir === 'h' ? 'auto' : 'hidden', overflowY: dir === 'v' ? 'auto' : 'hidden'});
+    el.innerHTML = `<div class="content" style="width:${cw + cdx}px;height:${ch}px"><img src="img/${cimg}.png" width="${cw}" height="${ch}" style="margin-left:${cdx}px" alt=""></div>`;
+    layer.appendChild(el); scrolls[sid] = {el: el.firstChild, x, y};
+  }
+  for (const h of D.H) {
+    if (h.f !== id) continue;
+    const el = document.createElement('div'); el.className = 'hot'; el.title = h.n;
+    let parent = layer, x = h.x, y = h.y;
+    if (h.s) { const s = scrolls[h.s]; parent = s.el; x -= s.x; y -= s.y; }
+    Object.assign(el.style, {left: x + 'px', top: y + 'px', width: h.w + 'px', height: h.h + 'px'});
+    el.onclick = e => { e.stopPropagation(); act(h.a); };
+    parent.appendChild(el);
+  }
+  if (id === '58:2' && !removed) {
+    const box = document.createElement('div'); box.className = 'unchecked';
+    Object.assign(box.style, {left: '137px', top: '360px', width: '20px', height: '20px'});
+    layer.appendChild(box);
+  }
+  st.onclick = () => { st.classList.add('flash'); setTimeout(() => st.classList.remove('flash'), 400); };
+  return st;
+}
+
+function fit() {
+  for (const st of document.querySelectorAll('.stage')) {
+    st.style.zoom = Math.min(1, (document.documentElement.clientWidth - 32) / parseFloat(st.style.width));
+  }
+}
+
+function show(id) {
+  current = id; closeOverlay();
+  wrap.replaceChildren(stage(id));
+  document.getElementById('title').textContent = D.F[id][0];
+  if (location.hash.slice(1) !== id) history.pushState(null, '', '#' + id);
+  window.scrollTo(0, 0); fit();
+}
+function overlay(id) { dim.replaceChildren(stage(id)); dim.classList.add('on'); fit(); }
+function closeOverlay() { dim.classList.remove('on'); dim.replaceChildren(); }
+dim.onclick = e => { if (e.target === dim) closeOverlay(); };
+
+let current;
+function act(a) {
+  if (a.resetRemoved) removed = true;
+  if (a.toggleRemoved) { removed = !removed; show(current); return; }
+  if (a.ifRemoved) return show(removed ? a.ifRemoved[0] : a.ifRemoved[1]);
+  if (a.go) return show(a.go);
+  if (a.overlay) return overlay(a.overlay);
+  if (a.close) return closeOverlay();
+}
+
+document.getElementById('restart').onclick = () => { removed = true; show('62:2'); };
+window.onpopstate = () => { const id = location.hash.slice(1); if (D.F[id]) { current = id; wrap.replaceChildren(stage(id)); document.getElementById('title').textContent = D.F[id][0]; closeOverlay(); fit(); } };
+window.onresize = fit;
+const start = location.hash.slice(1);
+show(D.F[start] && !['72:6', '97:2'].includes(start) ? start : '62:2');
+</script>
+</body>
 </html>
